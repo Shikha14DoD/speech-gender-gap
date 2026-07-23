@@ -1,0 +1,44 @@
+{
+  "date_range": {
+    "start": "2023-01-01",
+    "end": "2026-12-31"
+  },
+  "leaders": [
+    {
+      "country": "Slovenia",
+      "leader": "Nataša Pirc Musar",
+      "role": "President",
+      "sex": "F",
+      "base_url": "https://www.predsednica-slo.si/en/news/all",
+      "language": "English/Slovenian",
+      "tenure_end": null
+    },
+    {
+      "country": "Italy",
+      "leader": "Giorgia Meloni",
+      "role": "Prime Minister",
+      "sex": "F",
+      "base_url": "https://www.governo.it/en/interventi-en",
+      "language": "English/Italian",
+      "tenure_end": null
+    },
+    {
+      "country": "Denmark",
+      "leader": "Mette Frederiksen",
+      "role": "Prime Minister",
+      "sex": "F",
+      "base_url": "https://english.stm.dk/the-prime-minister/speeches/",
+      "language": "English/Danish",
+      "tenure_end": null
+    },
+    {
+      "country": "Samoa",
+      "leader": "Fiamē Naomi Mataʻafa",
+      "role": "Prime Minister",
+      "sex": "F",
+      "base_url": "https://mygov.gov.ws/category/pm-corner/",
+      "language": "English/Samoan",
+      "tenure_end": "2025-09-16"
+    }
+  ]
+}

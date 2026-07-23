@@ -1,0 +1,17 @@
+# Virtual environment
+venv/
+
+# Python cache files
+__pycache__/
+*.pyc
+
+# Scraped data outputs (raw HTML dumps and large datasets shouldn't live in git)
+data/raw/*
+data/processed/*
+!data/raw/.gitkeep
+!data/processed/.gitkeep
+
+# OS/editor junk
+.DS_Store
+Thumbs.db
+.vscode/
