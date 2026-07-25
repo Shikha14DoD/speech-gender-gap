@@ -72,3 +72,19 @@ def clean_text(text: str) -> str:
     text = re.sub(r"[ \t]+", " ", text)
     text = re.sub(r"\n{3,}", "\n\n", text)
     return text.strip()
+
+import csv
+import os
+
+
+def write_csv(speeches: list, out_path: str):
+    """Append a list of Speech records to a CSV file, writing headers only if new."""
+    fieldnames = [f.name for f in dataclasses.fields(Speech)]
+    write_header = not os.path.exists(out_path)
+    with open(out_path, "a", newline="", encoding="utf-8") as f:
+        writer = csv.DictWriter(f, fieldnames=fieldnames)
+        if write_header:
+            writer.writeheader()
+        for s in speeches:
+            writer.writerow(dataclasses.asdict(s))
+    print(f"  -> wrote {len(speeches)} rows to {out_path}")
