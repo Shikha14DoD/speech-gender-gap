@@ -54,11 +54,13 @@ def in_date_range(iso_date: Optional[str], start: str, end: str) -> bool:
 
 SPEECH_KEYWORDS = [
     "speech", "address", "remarks", "statement", "keynote", "opening address",
-    "new year", "message", "intervention", "declaration", "podcast",
+    "new year", "message", "intervention", "declaration", "podcast","statement by"
 ]
 NON_SPEECH_KEYWORDS = [
     "credentials", "condolence", "meets", "meeting with", "visit to", "visits",
     "hosts", "bilateral meeting", "photo", "appoint", "welcomes", "receives",
+    "participates in", "attends", "day of mourning", "half-mast",
+    "telephone conversation","ales musar", "aleš musar"
 ]
 
 
@@ -76,3 +78,21 @@ def classify_as_speech(title: str) -> str:
     if has_non_speech_kw and not has_speech_kw:
         return "no"
     return "maybe"
+
+
+def classify_content_type(title: str) -> str:
+    """
+    Rough classification of what KIND of content this is, distinct from
+    classify_as_speech()'s yes/maybe/no filter. Useful downstream since
+    interviews mix interviewer questions with the leader's own answers,
+    which affects how full_text should be analyzed.
+    Returns one of: 'Interview', 'Speech', 'Statement', 'Other'.
+    """
+    t = title.lower()
+    if "interview" in t:
+        return "Interview"
+    if any(k in t for k in ["speech", "address", "remarks", "keynote", "intervention"]):
+        return "Speech"
+    if any(k in t for k in ["statement", "message", "declaration"]):
+        return "Statement"
+    return "Other"

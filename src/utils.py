@@ -44,7 +44,8 @@ class Speech:
     full_text: str
     language: str
     source_url: str
-    likely_speech: str       # "yes" / "maybe" / "no" -- heuristic, not ground truth
+    likely_speech: str             # "yes" / "maybe" / "no" -- heuristic, not ground truth
+    content_type: str = "Other"    # "Speech" / "Interview" / "Statement" / "Other"                               # "Speech" / "Interview" / "Statement" / "Other"
     notes: str = ""
 
 
