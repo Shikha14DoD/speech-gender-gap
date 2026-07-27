@@ -12,6 +12,7 @@ from src.config_loader import load_config, get_leader_config
 from src.scraper_denmark import parse_denmark
 from src.scraper_italy import parse_italy
 from src.scraper_slovenia import parse_slovenia
+from src.scraper_samoa import parse_samoa
 from src.utils import write_csv
 
 # As we add more countries, we register their parser functions here.
@@ -19,6 +20,7 @@ PARSERS = {
     "denmark": parse_denmark,
     "italy": parse_italy,
     "slovenia": parse_slovenia,
+    "samoa": parse_samoa,
 }
 
 

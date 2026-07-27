@@ -173,3 +173,55 @@ later phase for the sex-comparison analysis.
   (no such limit) and contains the complete, untruncated text -- treat
   the CSV as the authoritative source; the .xlsx is for convenient
   viewing only.
+
+  ### Samoa (Fiamē Naomi Mataʻafa)
+- Standard WordPress category archive (`mygov.gov.ws/category/pm-corner/`),
+  clean `/page/N/` pagination -- required switching to a browser-like
+  User-Agent to avoid a bot-detection block (403 errors) that the site's
+  security plugin returns for non-browser-looking traffic.
+- Category is shared with her successor (male PM, since 16 Sep 2025) and
+  his Deputy PM (a different woman) -- filtered by name marker in
+  title/URL AND a hard date cutoff at her last day in office. Do not
+  relax either check.
+- **Major coverage gap, confirmed unrecoverable:** the site's entire
+  archive only goes back to approximately March 2024 -- nothing from
+  the start of her tenure (24 May 2021) or even the start of this
+  project's date range (1 Jan 2023) is present. Checked the Wayback
+  Machine directly for any archived version of this domain from
+  2021-2023 (the same technique that recovered Denmark's missing
+  speeches) -- found NOTHING (zero results). This strongly suggests the
+  site was rebuilt/relaunched in 2024 and earlier content was not
+  preserved anywhere accessible. Final dataset covers only
+  [DATE_RANGE] -- a significantly shorter window than her actual tenure
+  or the project's intended range for this country. This should be
+  flagged explicitly in any analysis using this data, since Samoa's
+  coverage is structurally different (much shorter) than the other
+  three countries.
+
+  ### Samoa (Fiamē Naomi Mataʻafa)
+- Standard WordPress category archive (`mygov.gov.ws/category/pm-corner/`),
+  clean `/page/N/` pagination -- required switching to a browser-like
+  User-Agent to avoid a bot-detection block (403 errors) that the site's
+  security plugin returns for non-browser-looking traffic.
+- Category is shared with her successor (male PM, since 16 Sep 2025) and
+  his Deputy PM (a different woman) -- filtered by name marker in
+  title/URL AND a hard date cutoff at her last day in office. Do not
+  relax either check.
+- **Major coverage gap, confirmed unrecoverable:** the site's entire
+  archive only goes back to approximately March 2024 -- nothing from
+  the start of her tenure (24 May 2021) or even the start of this
+  project's date range (1 Jan 2023) is present. Checked the Wayback
+  Machine directly for any archived version of this domain from
+  2021-2023 (the same technique that recovered Denmark's missing
+  speeches) -- found NOTHING (zero results). This strongly suggests the
+  site was rebuilt/relaunched in 2024 and earlier content was not
+  preserved anywhere accessible.
+- **Final dataset: 15 rows, covering only 26 Mar 2024 to 5 Jul 2024** --
+  a roughly 3-month window, dramatically shorter than her actual
+  ~4-year tenure or this project's intended 2023-2026 range for other
+  countries. This should be flagged explicitly in any analysis using
+  this data -- Samoa's coverage is structurally different (much
+  shorter and narrower) than Denmark, Italy, and Slovenia, through no
+  fault of the scraping approach; it reflects a genuine, verified gap
+  in what's publicly available online for this leader's earlier
+  speeches.
