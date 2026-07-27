@@ -166,3 +166,10 @@ later phase for the sex-comparison analysis.
   the final page, exactly matching what the scraper found and stopped
   at. No early-stopping or missed pages.
 - Final row count: 212 (213 scraped, minus 1 spouse-content row removed).
+
+- **Excel file limitation:** `denmark.xlsx` truncates ~7 of the longest
+  speeches (New Year's addresses and similar lengthy remarks) at Excel's
+  hard 32,767-character-per-cell limit. `denmark.csv` is NOT affected
+  (no such limit) and contains the complete, untruncated text -- treat
+  the CSV as the authoritative source; the .xlsx is for convenient
+  viewing only.
