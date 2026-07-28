@@ -3,3 +3,4 @@ beautifulsoup4>=4.12
 pandas>=2.0
 deep-translator>=1.11
 openpyxl>=3.1
+curl_cffi>=0.6

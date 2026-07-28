@@ -24,7 +24,13 @@ HEADERS = {
     "User-Agent": (
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
         "(KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
-    )
+    ),
+    "Accept": (
+        "text/html,application/xhtml+xml,application/xml;q=0.9,"
+        "image/webp,*/*;q=0.8"
+    ),
+    "Accept-Language": "en-US,en;q=0.9",
+    "Referer": "https://web.archive.org/",
 }
 
 REQUEST_DELAY_SECONDS = 1.5
@@ -49,11 +55,11 @@ class Speech:
     notes: str = ""
 
 
-def get(url: str) -> Optional[requests.Response]:
+def get(url: str, timeout: int = REQUEST_TIMEOUT) -> Optional[requests.Response]:
     """GET a URL with retries and a polite delay between requests."""
     for attempt in range(1, MAX_RETRIES + 1):
         try:
-            resp = requests.get(url, headers=HEADERS, timeout=REQUEST_TIMEOUT)
+            resp = requests.get(url, headers=HEADERS, timeout=timeout)
             time.sleep(REQUEST_DELAY_SECONDS)
             if resp.status_code == 200:
                 return resp

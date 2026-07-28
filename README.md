@@ -225,3 +225,13 @@ later phase for the sex-comparison analysis.
   fault of the scraping approach; it reflects a genuine, verified gap
   in what's publicly available online for this leader's earlier
   speeches.
+
+  - **⚠ CURRENT STATUS (as of [today's date]): PARTIAL DATASET.** The full
+  scrape (~740 rows, previously validated) requires the Internet
+  Archive's Wayback CDX API for URL discovery, which has been
+  consistently unreachable (repeated timeouts/503/498 errors across
+  multiple attempts). Current `italy.csv` contains only 91 rows --
+  specifically the known-missing recent entries manually identified
+  earlier (see `fill_missing_italy.py`), NOT the full dataset. Re-run
+  `python main.py --country italy` once Wayback access is confirmed
+  working again to restore full coverage.
