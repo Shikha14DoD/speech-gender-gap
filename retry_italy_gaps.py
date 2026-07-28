@@ -17,9 +17,11 @@ CDX_PREFIX = "governo.it/en/articolo/"
 
 # The two gaps identified by compare_italy.py
 GAP_CHUNKS = [
-    ("2022-10-22", "2022-12-31"),
-    ("2024-01-01", "2024-12-31"),
-    ("2025-01-01", "2025-12-31"),  # found exactly 500 last time -- likely truncated at the limit
+    # ("2022-10-22", "2022-12-31"),
+    # ("2024-01-01", "2024-12-31"),
+    # ("2025-01-01", "2025-12-31"),
+    #   # found exactly 500 last time -- likely truncated at the limit
+      ("2025-01-01", "2025-12-31"),
 ]
 
 
