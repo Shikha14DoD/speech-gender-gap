@@ -13,6 +13,7 @@ from src.scraper_denmark import parse_denmark
 from src.scraper_italy import parse_italy
 from src.scraper_slovenia import parse_slovenia
 from src.scraper_samoa import parse_samoa
+from src.scraper_china import parse_china
 from src.utils import write_csv
 
 # As we add more countries, we register their parser functions here.
@@ -21,6 +22,7 @@ PARSERS = {
     "italy": parse_italy,
     "slovenia": parse_slovenia,
     "samoa": parse_samoa,
+    "china": parse_china,
 }
 
 
@@ -39,12 +41,17 @@ def main():
 
     out_path = args.out or f"data/processed/{args.country}.csv"
 
+    # Use a per-country date range if one is set in config.json;
+    # otherwise fall back to the project-wide default.
+    country_range = leader_config.get("date_range", config["date_range"])
+
     results = parser_fn(
         leader_config,
-        config["date_range"]["start"],
-        config["date_range"]["end"],
+        country_range["start"],
+        country_range["end"],
         args.limit,
     )
+    
     write_csv(results, out_path)
     print(f"\nDone. {len(results)} speeches written to {out_path}")
 
