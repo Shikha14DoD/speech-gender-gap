@@ -235,3 +235,36 @@ later phase for the sex-comparison analysis.
   earlier (see `fill_missing_italy.py`), NOT the full dataset. Re-run
   `python main.py --country italy` once Wayback access is confirmed
   working again to restore full coverage.
+
+  ### China (Xi Jinping)
+- Scraped from `english.scio.gov.cn`'s curated English "Speeches"
+  section (State Council Information Office coverage of Xi's
+  governance activities) -- no JavaScript rendering or bot-detection
+  issues encountered, unlike Denmark/Italy/Samoa's listing pages.
+  Individual article pages carry a clean, machine-readable date
+  directly in page metadata (`meta-publishdate`), similar to
+  Slovenia's approach -- more reliable than parsing visible text.
+- **Source-type note:** unlike the other four countries' sites (each
+  an official leader/government office publishing directly), this
+  content is distributed via Xinhua (China's state news agency),
+  republished on a State Council body's site -- a step removed from
+  "his own office publishing his own words." Flagged per-row in the
+  `notes` column.
+- **Scope note:** filtered to entries specifically framed under his
+  PRESIDENTIAL title ("President Xi" / "Chinese President Xi Jinping"
+  in the title) -- his other titles (General Secretary of the CPC,
+  Chairman of the Central Military Commission) are excluded even
+  though the source section covers him across all roles.
+- **Date range differs from the other four countries:** scoped to
+  Jan 2024 -- 2026 specifically (per project instruction), not
+  Jan 2023 onward. Implemented via a per-country `date_range` override
+  in `config.json` rather than the shared project-wide default.
+- **Coverage is notably thinner than the other countries: 21 rows
+  over ~2 years**, versus e.g. Denmark's 53 over 3.5 years or Italy's
+  979. This likely reflects the curated feed's scope -- capturing his
+  highest-profile international remarks (summits, state visits,
+  signed articles for foreign media) rather than the fuller range of
+  domestic speeches a head of state typically gives. Not yet
+  independently validated against an alternative source; treat this
+  as a preliminary, likely-incomplete dataset for this country until
+  further checked.
