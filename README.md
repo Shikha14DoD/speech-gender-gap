@@ -280,3 +280,12 @@ later phase for the sex-comparison analysis.
 - **Final validated dataset: 37 rows, 2024-05-07 to 2026-07-18.**
   Cross-checked against a manually browsed listing of the site's own
   pages; all entries accounted for.
+
+  - **Completeness validated against a manually browsed reference list
+  (38 entries, May 2024 -- July 2026): 37/38 match exactly by date.**
+  The one difference (Oct 29, 2025, "Explanation of the Recommendations
+  ... 15th Five-Year Plan") was deliberately excluded -- Xi delivered
+  it, but the site frames it under his Party role (General Secretary
+  of the CPC Central Committee) rather than his presidential title,
+  consistent with this project's scope of his PRESIDENTIAL activity
+  specifically.
