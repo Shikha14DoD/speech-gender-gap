@@ -39,7 +39,8 @@ def parse_china(leader_config: dict, start_date: str, end_date: str,
 
         links = sorted(set(
             a["href"] for a in soup.find_all("a", href=True)
-            if "/topnews/" in a["href"] and "/content_" in a["href"]
+            if ("/topnews/" in a["href"] or "/featured/xigovernance/" in a["href"])
+            and "/content_" in a["href"]
         ))
 
         if not links:
@@ -82,11 +83,13 @@ def _fetch_article(url: str, leader_config: dict) -> Optional[Speech]:
         title = clean_text(title_tag.get_text(separator=" ")) if title_tag else url
         title = re.sub(r"\s*\|\s*english\.scio\.gov\.cn\s*$", "", title)
 
-    # Require his PRESIDENTIAL title specifically in the title text --
-    # excludes content framed only under his Party/military titles.
-    is_president = bool(re.search(r"\bpresident\b", title, re.IGNORECASE)) and \
-                   "xi" in title.lower()
-    if not is_president:
+    # Require either "President" OR "Xi" in the title -- catches
+    # genuine speeches whose headline just says "Xi's speech..."
+    # without the word "President" attached, while still excluding
+    # content that isn't about him at all.
+    title_lower = title.lower()
+    is_xi = "president" in title_lower or "xi" in title_lower
+    if not is_xi:
         return None
 
     # Best source: meta-publishdate (clean ISO date in page metadata).

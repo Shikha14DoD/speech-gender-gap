@@ -268,3 +268,15 @@ later phase for the sex-comparison analysis.
   independently validated against an alternative source; treat this
   as a preliminary, likely-incomplete dataset for this country until
   further checked.
+
+  - **One article (May 7, 2024, China-France Business Council speech)
+  required a special fix:** it's linked correctly on the site, but
+  our standard `requests`-based fetch was served a stripped
+  placeholder page for this specific URL, while a browser-like fetch
+  got the real content -- likely the same category of disguised
+  bot-detection already solved elsewhere in this project (Wayback
+  Machine, Samoa). Fixed by fetching this one article with `curl_cffi`
+  (browser impersonation) instead; see `fill_missing_china.py`.
+- **Final validated dataset: 37 rows, 2024-05-07 to 2026-07-18.**
+  Cross-checked against a manually browsed listing of the site's own
+  pages; all entries accounted for.
