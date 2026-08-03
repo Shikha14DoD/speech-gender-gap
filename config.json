@@ -52,6 +52,19 @@
     "start": "2024-01-01",
     "end": "2026-12-31"
   }
+},
+{
+  "country": "China",
+  "leader": "Li Qiang",
+  "role": "Premier",
+  "sex": "M",
+  "base_url": "https://english.www.gov.cn/premier/news/",
+  "language": "English",
+  "tenure_end": null,
+  "date_range": {
+    "start": "2024-01-01",
+    "end": "2026-12-31"
+  }
 }
   ]
 }

@@ -15,9 +15,21 @@ def load_config() -> dict:
         return json.load(f)
 
 
-def get_leader_config(country: str, config: dict) -> dict:
-    """Look up a single leader's config entry by country name (case-insensitive)."""
+def get_leader_config(lookup_key: str, config: dict) -> dict:
+    """
+    Look up a single leader's config entry, matching by country name
+    OR leader name (case-insensitive). Needed since some countries now
+    have more than one leader tracked (e.g. China: Xi Jinping AND Li
+    Qiang) -- country name alone isn't unique in that case.
+    """
     for entry in config["leaders"]:
-        if entry["country"].lower() == country.lower():
+        if entry["country"].lower() == lookup_key.lower():
             return entry
-    raise ValueError(f"No config entry found for country: {country}")
+    for entry in config["leaders"]:
+        # Compare with spaces stripped from both sides, so "liqiang"
+        # matches a leader name like "Li Qiang".
+        normalized_lookup = lookup_key.lower().replace(" ", "")
+        normalized_leader = entry["leader"].lower().replace(" ", "")
+        if normalized_lookup in normalized_leader:
+            return entry
+    raise ValueError(f"No config entry found for: {lookup_key}")

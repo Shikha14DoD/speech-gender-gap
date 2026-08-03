@@ -14,6 +14,7 @@ from src.scraper_italy import parse_italy
 from src.scraper_slovenia import parse_slovenia
 from src.scraper_samoa import parse_samoa
 from src.scraper_china import parse_china
+from src.scraper_liqiang import parse_liqiang
 from src.utils import write_csv
 
 # As we add more countries, we register their parser functions here.
@@ -23,6 +24,7 @@ PARSERS = {
     "slovenia": parse_slovenia,
     "samoa": parse_samoa,
     "china": parse_china,
+    "liqiang": parse_liqiang,
 }
 
 

@@ -289,3 +289,35 @@ later phase for the sex-comparison analysis.
   of the CPC Central Committee) rather than his presidential title,
   consistent with this project's scope of his PRESIDENTIAL activity
   specifically.
+
+  ### China — Li Qiang (Premier)
+- **Discovery method: manually curated via targeted web searches, not
+  automated site scraping.** Li Qiang's speeches are published across
+  `english.www.gov.cn`'s general `/news/` feed (no dedicated section),
+  and the site's own search interface is JavaScript-rendered --
+  results are invisible to a plain fetch (confirmed via direct
+  dev-tools investigation: checked every network request behind the
+  search page, found only template/config data, no callable results
+  API). The Wayback Machine CDX approach used successfully elsewhere
+  in this project also failed here: this domain's Wayback crawl
+  history is dominated by old, periodically re-crawled pages, leaving
+  no room for genuinely recent content in each year's capped (500)
+  result set.
+- **Final dataset: 14 speeches, individually identified and verified**
+  via targeted searches (2024-01-17 to 2026-06-25), added via
+  `seed_liqiang.py`. Covers major international summits (G20, BRICS,
+  SCO, ASEAN, East Asia Summit, APEC-adjacent forums), the World
+  Economic Forum (Davos, both 2024 and the 2026 Summer Davos), a
+  state-visit banquet speech, and the China Development Forum keynote.
+- **Deliberately excluded: the three annual "Government Work Reports"**
+  (delivered each March to the National People's Congress -- 2024,
+  2025, 2026). Independently confirmed via multiple news sources that
+  he personally delivers this report, but it was judged not to be a
+  "speech" in the sense the rest of this dataset captures -- more a
+  formal policy document read into the record than personally-authored
+  remarks. Consistent with the same judgment call made for Xi Jinping's
+  15th Five-Year Plan explanation document.
+- This is NOT a comprehensive scrape -- treat as a curated sample of
+  his major addresses, not full coverage of every remark or statement
+  he's made. Add more entries to `seed_liqiang.py`'s `KNOWN_URLS` list
+  as additional real speeches are identified.
