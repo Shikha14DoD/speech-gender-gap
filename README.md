@@ -321,3 +321,36 @@ later phase for the sex-comparison analysis.
   his major addresses, not full coverage of every remark or statement
   he's made. Add more entries to `seed_liqiang.py`'s `KNOWN_URLS` list
   as additional real speeches are identified.
+
+  ### China — Xi Jinping (People's Daily database, supplementary source)
+- **Source:** `jhsjk.people.cn`, People's Daily's official "Xi Jinping
+  Series of Important Speeches Database" -- a dedicated, much larger
+  archive (128 speech-type entries for 2024-2026 alone) than the
+  English SCIO site, filterable by content type and year. The site's
+  own UI is JavaScript-driven; found the real underlying JSON search
+  API via browser dev tools (same technique used for Li Qiang).
+- **Content is in Chinese** -- machine-translated via `deep-translator`
+  (Google Translate), with a fallback to `MyMemoryTranslator` for
+  chunks that failed on the primary service. This was necessary: the
+  free Google Translate endpoint showed significant, unpredictable
+  intermittent failures under this volume/document length (confirmed
+  via direct testing -- identical-length chunks from the same document
+  sometimes succeeded, sometimes failed, with no consistent size
+  threshold). The fallback recovered the large majority of failures;
+  final dataset has 100% successful translation coverage.
+- **Chunking note:** Chinese-to-English translation expands text
+  substantially (~4.5x by character count in testing) -- chunk size
+  limits had to account for the translated OUTPUT length against
+  Google's cap, not just the Chinese input length, which was the
+  initial source of a large batch of early translation failures.
+- **Final dataset: 127 rows** (2024-01-01 to 2026-07-31), after
+  removing 1 row classified `likely_speech: "no"`. `likely_speech` and
+  `content_type` were computed from the translated English titles
+  (`title_en`), not the original Chinese, since the classifier only
+  recognizes English keywords.
+- **Relationship to the SCIO dataset:** this is a separate, larger,
+  supplementary source for the same person, not a replacement -- the
+  two datasets are stored separately (`china.csv` for SCIO,
+  `xipeoplecn.csv` for this source) and may contain overlapping
+  events described differently; not yet deduplicated against each
+  other.

@@ -17,17 +17,19 @@ def load_config() -> dict:
 
 def get_leader_config(lookup_key: str, config: dict) -> dict:
     """
-    Look up a single leader's config entry, matching by country name
-    OR leader name (case-insensitive). Needed since some countries now
-    have more than one leader tracked (e.g. China: Xi Jinping AND Li
-    Qiang) -- country name alone isn't unique in that case.
+    Look up a single leader's config entry, matching by an explicit
+    'key' field first (needed since some people/countries now have
+    multiple distinct config entries -- e.g. Xi Jinping has both an
+    English SCIO source and a Chinese People's Daily source), then
+    falling back to country name, then leader name.
     """
+    for entry in config["leaders"]:
+        if entry.get("key", "").lower() == lookup_key.lower():
+            return entry
     for entry in config["leaders"]:
         if entry["country"].lower() == lookup_key.lower():
             return entry
     for entry in config["leaders"]:
-        # Compare with spaces stripped from both sides, so "liqiang"
-        # matches a leader name like "Li Qiang".
         normalized_lookup = lookup_key.lower().replace(" ", "")
         normalized_leader = entry["leader"].lower().replace(" ", "")
         if normalized_lookup in normalized_leader:

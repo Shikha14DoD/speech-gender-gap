@@ -47,6 +47,7 @@
   "sex": "M",
   "base_url": "http://english.scio.gov.cn/featured/xigovernance/node_7253447.htm",
   "language": "English",
+  "key": "china",
   "tenure_end": null,
   "date_range": {
     "start": "2024-01-01",
@@ -60,11 +61,26 @@
   "sex": "M",
   "base_url": "https://english.www.gov.cn/premier/news/",
   "language": "English",
+  "key": "liqiang",
   "tenure_end": null,
   "date_range": {
     "start": "2024-01-01",
     "end": "2026-12-31"
   }
+},
+{
+  "country": "China",
+  "leader": "Xi Jinping",
+  "role": "President",
+  "sex": "M",
+  "base_url": "https://jhsjk.people.cn/",
+  "language": "Chinese",
+  "tenure_end": null,
+  "date_range": {
+    "start": "2024-01-01",
+    "end": "2026-12-31"
+  },
+  "key": "xipeoplecn"
 }
   ]
 }
