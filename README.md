@@ -354,3 +354,33 @@ later phase for the sex-comparison analysis.
   `xipeoplecn.csv` for this source) and may contain overlapping
   events described differently; not yet deduplicated against each
   other.
+
+
+### Barbados (Mia Mottley)
+- Site (`pmo.gov.bb`) blocks plain `requests` library traffic with a
+  403 -- same category of bot-detection issue solved elsewhere in
+  this project; fixed with `curl_cffi` (browser impersonation) plus a
+  proper polite-delay/retry pattern.
+- **Important structural finding:** the site's homepage uses a broken
+  dual-widget layout (a "Recent Posts" section frozen at old content,
+  duplicated alongside a "Latest Posts" sidebar that repeats the same
+  4 items on every page) -- neither paginates correctly. The
+  `/category/speeches/` feed (originally suggested) stopped being
+  tagged after Feb 2025, just before this project's date range starts.
+  **Used `/category/latest/` instead** -- confirmed via direct
+  inspection to be a properly, singly-paginated, genuinely
+  chronological feed with no duplication issues.
+- Feed mixes real speeches with routine government announcements;
+  `likely_speech`/`content_type` flag but don't filter ambiguous rows.
+- Final dataset: 7 rows, 2025-03-12 to 2026-02-16 (date range requested
+  was Feb 5 2025 onward; the one entry from Feb 4 2025 -- one day
+  before the cutoff -- was correctly excluded).
+
+- **`content_type`/`likely_speech` are set directly to "Speech"/"yes"
+  for this country**, not computed via the generic title-keyword
+  classifier used elsewhere -- Barbados's titles (e.g. "A call to
+  action emphasizes consumer mobilization...") don't follow the
+  "President X's speech at Y" pattern the classifier expects, so it
+  would mislabel genuine speeches as low-confidence. Since every row
+  here already passed strict first-person/byline filtering (see above),
+  labeling is based on that verification instead.

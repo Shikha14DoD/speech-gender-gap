@@ -81,6 +81,20 @@
     "end": "2026-12-31"
   },
   "key": "xipeoplecn"
+},
+{
+  "country": "Barbados",
+  "leader": "Mia Mottley",
+  "role": "Prime Minister",
+  "sex": "F",
+  "base_url": "https://pmo.gov.bb/category/speeches/",
+  "language": "English",
+  "tenure_end": null,
+  "key": "barbados",
+  "date_range": {
+    "start": "2025-02-05",
+    "end": "2026-12-31"
+  }
 }
   ]
 }
