@@ -95,6 +95,20 @@
     "start": "2025-02-05",
     "end": "2026-12-31"
   }
+},
+{
+  "country": "USA",
+  "leader": "Joe Biden",
+  "role": "President",
+  "sex": "M",
+  "base_url": "https://bidenwhitehouse.archives.gov/briefing-room/speeches-remarks/",
+  "language": "English",
+  "tenure_end": "2025-01-20",
+  "key": "biden",
+  "date_range": {
+    "start": "2024-01-01",
+    "end": "2025-01-20"
+  }
 }
   ]
 }

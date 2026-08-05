@@ -384,3 +384,19 @@ later phase for the sex-comparison analysis.
   would mislabel genuine speeches as low-confidence. Since every row
   here already passed strict first-person/byline filtering (see above),
   labeling is based on that verification instead.
+
+### USA — Joe Biden (President, through 20 Jan 2025)
+- Source: `bidenwhitehouse.archives.gov`, the frozen official Biden
+  White House archive (no longer updated, covers his full term).
+  Plain server-rendered HTML, clean `/page/N/` pagination -- no
+  JavaScript rendering or bot-detection issues.
+- Feed shared with the Vice President, First Lady, and staff --
+  filtered to entries attributed to "President Biden" specifically.
+  Caught and fixed a real bug during this: non-breaking space
+  characters (`&nbsp;`) in some titles (e.g. "Jill  Biden" with
+  irregular spacing) were bypassing the exact-string exclusion check
+  -- fixed at the shared `clean_text()` level, benefiting every
+  scraper in the project, not just this one.
+- Final dataset: 374 rows, 2024-01-05 to 2025-01-19 (his tenure ends
+  20 Jan 2025). Spot-checked a random sample -- genuine, substantial
+  transcripts with authentic White House formatting.
