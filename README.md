@@ -400,3 +400,80 @@ later phase for the sex-comparison analysis.
 - Final dataset: 374 rows, 2024-01-05 to 2025-01-19 (his tenure ends
   20 Jan 2025). Spot-checked a random sample -- genuine, substantial
   transcripts with authentic White House formatting.
+
+# USA — Donald Trump: Coverage & Validation Notes
+
+## Source
+Primary source: the [Senate Democratic Caucus's Trump Transcripts
+archive](https://www.democrats.senate.gov/newsroom/trump-transcripts),
+republishing Roll Call Factbase transcripts. This became the primary
+source after whitehouse.gov removed official transcripts from its site
+in late May 2025. A small number of early rows (Jan 19 – Apr 30, 2025)
+come from an earlier scrape of whitehouse.gov itself, before that
+removal; that original source is no longer live and cannot be
+re-scraped if ever lost, so this early slice should be treated as
+irreplaceable and backed up carefully.
+
+## Coverage
+- **Date range:** 2025-01-19 to 2026-07-13
+- **Total rows:** 521
+- **Content type breakdown (`likely_speech`):** 76 "yes", 365 "maybe",
+  80 "no" — all retained, per the project's requirement to keep every
+  content type with a classification column rather than filtering at
+  scrape time (see bug note below).
+
+## Bug found and fixed (Aug 2026)
+An early version of the scraper's page-processing loop included:
+```python
+if article.likely_speech == "no":
+    continue
+```
+This silently **dropped** any article whose title-keyword classifier
+guessed "not a speech" (e.g. "Meets with...", "Holds a Bilat with...",
+"Attends a Ceremony at..."), instead of keeping it with a classification
+label for downstream filtering. This directly conflicted with the
+project's methodology decision to retain all content types.
+
+A separate, smaller issue was also found and fixed: the speaker-label
+match in `_fetch_article` only accepted `"president trump"` and
+`"trump"`, missing pages using `"president donald trump"` — broadened
+to catch that variant too, though this turned out not to be the actual
+cause of the missing rows in this case.
+
+**Fix:** removed the `likely_speech == "no"` skip. A full re-scrape
+after the fix recovered rows previously dropped across the entire date
+range (433 → 521 rows after re-merging the early-2025 rows and removing
+6 confirmed exact-duplicate rows caused by pagination overlap).
+
+## Validation approach
+Given no independent structured export exists for this source, validation
+was done by manually comparing the CSV against the source site's own
+listing pages for specific date windows:
+
+| Window checked | Source entries | Found in CSV | Result |
+|---|---|---|---|
+| 2026-07-01 to 2026-07-13 | 20 | 20 | All present, 0 missing |
+| 2026-06-17 to 2026-06-29 | 19 unique* | 21 | All present, 0 missing (2 extra legitimate rows not visible in the checked source snippet) |
+
+\* The source lists this window's Marc Caputo/Axios interview
+(6.18.26) under two different URLs — a duplicate on the source's own
+side, not a scraper error. Documented here so it isn't mistaken for a
+scraping bug if seen again.
+
+**Scope of validation:** these two windows (spanning ~40 entries) were
+checked in full; the remaining ~480 rows were not individually spot
+checked against the live source due to pagination access limits during
+this review. Confidence in the rest of the dataset rests on: (1) the
+bug fix was applied uniformly across the full re-scrape, not just the
+checked windows, and (2) the two checked windows — one recent, one
+~2 weeks earlier — both came back clean after the fix.
+
+## Known limitations
+- The source archive itself lags "today" by roughly 2–4 weeks at any
+  given time (it updates periodically, not daily) — this is a property
+  of the source, not a scraping gap.
+- Jan–Apr 2025 rows come from a now-dead source (whitehouse.gov) and
+  cannot be re-verified or re-scraped if lost — treat with extra care.
+- Deduplication is based on exact match of (date, title, full_text);
+  near-duplicates with minor text differences would not be caught by
+  this method.

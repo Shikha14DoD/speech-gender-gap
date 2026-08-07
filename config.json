@@ -109,6 +109,48 @@
     "start": "2024-01-01",
     "end": "2025-01-20"
   }
+},
+{
+  "country": "USA",
+  "leader": "Donald Trump",
+  "role": "President",
+  "sex": "M",
+  "base_url": "https://www.whitehouse.gov/remarks/",
+  "language": "English",
+  "tenure_end": null,
+  "key": "trump",
+  "date_range": {
+    "start": "2025-01-20",
+    "end": "2026-12-31"
+  }
+},
+{
+  "country": "USA",
+  "leader": "Donald Trump",
+  "role": "President",
+  "sex": "M",
+  "base_url": "https://www.democrats.senate.gov/newsroom/trump-transcripts",
+  "language": "English",
+  "tenure_end": null,
+  "key": "trump",
+  "date_range": {
+    "start": "2025-01-20",
+    "end": "2026-12-31"
+  }
+},
+{
+  "country": "USA",
+  "leader": "Donald Trump",
+  "role": "President",
+  "sex": "M",
+  "base_url": "https://www.whitehouse.gov/remarks/",
+  "language": "English",
+  "tenure_end": null,
+  "key": "trumpearly",
+  "date_range": {
+    "start": "2025-01-20",
+    "end": "2025-05-23"
+  }
 }
   ]
 }
