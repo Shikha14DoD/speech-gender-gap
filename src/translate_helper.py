@@ -127,7 +127,10 @@ def translate_to_english(text: str, source_language: str) -> Optional[str]:
         # different translation service as a fallback before giving up.
         if translated is None:
             try:
-                fallback = MyMemoryTranslator(source=source_language, target="en-GB")
+                MYMEMORY_SOURCE_MAP = {
+                "es": "es-ES", "da": "da-DK", "sl": "sl-SI", "it": "it-IT", "sm": "sm-WS", "zh-CN": "zh-CN", "zh": "zh-CN",}
+                mymemory_source = MYMEMORY_SOURCE_MAP.get(source_language, source_language)
+                fallback = MyMemoryTranslator(source=mymemory_source, target="en-GB")
                 translated = fallback.translate(chunk)
                 print(f"  [info] chunk {i+1}/{len(chunks)} recovered via fallback translator")
             except Exception as e2:

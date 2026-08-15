@@ -151,6 +151,34 @@
     "start": "2025-01-20",
     "end": "2025-05-23"
   }
-}
+},
+{
+    "country": "Mexico",
+    "leader": "Claudia Sheinbaum Pardo",
+    "role": "President",
+    "sex": "F",
+    "base_url": "https://www.gob.mx/presidencia/es/archivo/articulos",
+    "language": "Spanish",
+    "tenure_end": null,
+    "key": "mexico",
+    "date_range": {
+      "start": "2024-10-02",
+      "end": "2026-12-31"
+    }
+  },
+  {
+    "country": "Mexico",
+    "leader": "Andrés Manuel López Obrador",
+    "role": "President",
+    "sex": "M",
+    "base_url": "https://www.gob.mx/presidencia/es/archivo/articulos",
+    "language": "Spanish",
+    "tenure_end": "2024-09-30",
+    "key": "mexico_amlo",
+    "date_range": {
+      "start": "2024-01-01",
+      "end": "2024-09-30"
+    }
+  }
   ]
 }
