@@ -19,11 +19,13 @@ from src.scraper_xi_peoplecn import parse_xi_peoplecn
 from src.scraper_barbados import parse_barbados
 from src.scraper_biden import parse_biden
 from src.scraper_trump import parse_trump
+from src.scraper_mexico import parse_mexico
 from src.utils import write_csv
 from src.scraper_trump import parse_trump
 from src.utils import write_csv
 from src.scraper_trump import parse_trump
 from src.scraper_trump_early2025 import parse_trump_early2025
+from src.scraper_amlo import parse_amlo
 from src.utils import write_csv
 
 # As we add more countries, we register their parser functions here.
@@ -38,7 +40,9 @@ PARSERS = {
     "barbados": parse_barbados,
     "biden": parse_biden,
     "trump": parse_trump,
+    "mexico": parse_mexico,
     "trumpearly": parse_trump_early2025,
+    "mexico_amlo": parse_amlo,
 }
 
 

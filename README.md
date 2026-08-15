@@ -477,3 +477,232 @@ checked windows, and (2) the two checked windows — one recent, one
 - Deduplication is based on exact match of (date, title, full_text);
   near-duplicates with minor text differences would not be caught by
   this method.
+
+# Mexico — Claudia Sheinbaum Pardo & Andrés Manuel López Obrador (AMLO):
+# Coverage & Validation Notes
+
+## Source
+Primary source: gob.mx Presidencia archive (bot-protected, scraped via
+curl_cffi with chrome impersonation).
+- Sheinbaum (current term): `gob.mx/presidencia/es/archivo/articulos`,
+  individual articles under `/presidencia/articulos/...`.
+- AMLO (2018-2024 term, Jan-Sep 2024 covered here): after the
+  administration change, his content moved to `gob.mx/amlo/...` --
+  the old `/presidencia/articulos/...` URLs for his content now
+  redirect to the homepage (confirmed via manual browser test, not
+  just bot detection). Listing: `gob.mx/amlo/archivo/articulos`,
+  articles under `/amlo/articulos/...`.
+
+## Coverage
+- **Sheinbaum:** 901 rows, 2024-10-02 (inauguration) to 2026-08-09,
+  EXCLUDING 2026-07-09 to 2026-07-27 (already uploaded separately by
+  Ginette's team -- removed here to avoid duplication when merged).
+- **AMLO:** 254 rows, 2024-01-02 to 2024-09-30 (his last day in office).
+- Combined: continuous coverage 2024-01-02 to 2026-08-09 (excluding the
+  above window), across both presidents.
+
+## Bugs found and fixed (Aug 2026)
+Building the Sheinbaum scraper from scratch surfaced three real bugs,
+found through iterative testing rather than a single validation pass:
+
+1. **Wrong date source.** First attempt used a `<div class="date-marque">`
+   element found on article pages -- turned out to be an unrelated
+   sitewide "latest headlines" ticker widget, not the article's own
+   date. Every article was getting today's/recent dates regardless of
+   its actual content. Fixed by using the listing page's own
+   `<time date="...">` attribute instead, which is genuinely
+   per-article and reliable.
+
+2. **Multi-paragraph speeches truncated to one sentence.** The site
+   only labels the FIRST paragraph of a speaker's turn with a
+   `<strong>` tag; all following paragraphs in that same turn are
+   unlabeled plain `<p>` tags. Initial extraction required a label on
+   every paragraph, so only the opening line of most speeches was
+   captured (avg. text length ~3,100 chars). Fixed by tracking "current
+   speaker" across unlabeled paragraphs until a new labeled speaker (or
+   a section-break marker) appears. After the fix, avg. text length
+   rose to ~22,000-27,000 chars -- a more plausible length for full
+   press conference transcripts including Q&A.
+
+3. **Unrecognized speakers (moderator, crowd chants) leaking through.**
+   A logic bug meant that ANY labeled paragraph got appended regardless
+   of whether the speaker matched Sheinbaum's name, as long as it
+   wasn't on an explicit exclude list. This let moderator introductions
+   and crowd "¡Viva!" chants leak into her attributed text. Fixed by
+   flipping the logic: only append when the speaker is POSITIVELY
+   confirmed as her, not merely "not on the exclude list."
+
+For AMLO, the older site template (pre-Oct 2024) turned out to have no
+`<strong>` tags at all -- speaker labels are plain text like
+"PRESIDENTE ANDRÉS MANUEL LÓPEZ OBRADOR: ..." Required a different,
+text-pattern-based speaker detection (all-caps text before a colon)
+rather than the tag-based approach used for Sheinbaum.
+
+## Validation approach
+- **Automated checks** across full datasets: null date count (0 for
+  both), duplicate detection (6 confirmed exact duplicates removed from
+  Sheinbaum's 927-row initial pull, caused by the same kind of
+  pagination-boundary overlap seen in the Trump dataset; 0 duplicates
+  in AMLO's 254 rows), text-length distribution sanity checks.
+- **Manual leak-checks**: searched both datasets for common other-speaker
+  identifiers (governors, secretaries, moderator, crowd). All matches
+  found were confirmed to be Sheinbaum/AMLO using those words naturally
+  in their own speech (e.g. "I want to thank the Secretary of..."), not
+  actual leaked paragraphs from other speakers.
+- **Source spot-checks**: for Sheinbaum, two windows (2026-07-01 to
+  07-13, and 2026-06-17 to 06-29) were checked against the live listing
+  page -- both came back with zero missing entries. For AMLO, the
+  2024-06-10 to 06-20 window was checked the same way; one apparent
+  discrepancy (source showing 2 entries for 06-10, dataset showing 1)
+  turned out to be correct: the second entry was a press conference by
+  Sheinbaum as president-elect during the transition, correctly
+  excluded from AMLO's own dataset.
+- **Full manual read-through**: one complete Sheinbaum transcript
+  (Reforestación, Aug 9 2026) read start to finish -- coherent, no
+  leaked or duplicated content, natural beginning and ending.
+
+**Scope of validation:** as with Trump, these spot-checks cover
+specific windows (~40-50 entries total across both leaders), not every
+row individually. Confidence in the rest rests on the same fixes being
+applied uniformly across the full re-scrape, plus multiple independent
+windows (spanning different months/years) coming back clean.
+
+## Known limitations
+- AMLO's original source (`gob.mx/presidencia/articulos/...` for his
+  term) is dead -- pages redirect to the homepage. Cannot be
+  re-scraped or re-verified from that original path if the `/amlo/...`
+  path is ever also removed. Treat AMLO's dataset with the same care
+  as Trump's Jan-Apr 2025 whitehouse.gov-sourced rows.
+- The source site is intermittently flaky (~500 errors observed on
+  both listing and article pages, self-recovering on retry most of the
+  time). A listing page that fails all retries would be silently
+  skipped with no visible gap in the output -- this is a known risk,
+  not something this validation pass can fully rule out. If exact
+  per-day completeness ever matters for analysis, this is the first
+  place to check.
+- Deduplication is based on exact match of (date, title); near-duplicates
+  with minor text differences would not be caught.
+
+
+# Mexico — Claudia Sheinbaum Pardo & Andrés Manuel López Obrador (AMLO):
+# Coverage & Validation Notes
+
+## Source
+Primary source: gob.mx Presidencia archive (bot-protected, scraped via
+curl_cffi with chrome impersonation).
+- Sheinbaum (current term): `gob.mx/presidencia/es/archivo/articulos`,
+  individual articles under `/presidencia/articulos/...`.
+- AMLO (2018-2024 term, Jan-Sep 2024 covered here): after the
+  administration change, his content moved to `gob.mx/amlo/...` --
+  the old `/presidencia/articulos/...` URLs for his content now
+  redirect to the homepage (confirmed via manual browser test, not
+  just bot detection). Listing: `gob.mx/amlo/archivo/articulos`,
+  articles under `/amlo/articulos/...`.
+
+## Coverage
+- **Sheinbaum:** 901 rows, 2024-10-02 (inauguration) to 2026-08-09,
+  EXCLUDING 2026-07-09 to 2026-07-27 (already uploaded separately by
+  Ginette's team -- removed here to avoid duplication when merged).
+- **AMLO:** 254 rows, 2024-01-02 to 2024-09-30 (his last day in office).
+- Combined: continuous coverage 2024-01-02 to 2026-08-09 (excluding the
+  above window), across both presidents.
+
+## Bugs found and fixed (Aug 2026)
+Building the Sheinbaum scraper from scratch surfaced three real bugs,
+found through iterative testing rather than a single validation pass:
+
+1. **Wrong date source.** First attempt used a `<div class="date-marque">`
+   element found on article pages -- turned out to be an unrelated
+   sitewide "latest headlines" ticker widget, not the article's own
+   date. Every article was getting today's/recent dates regardless of
+   its actual content. Fixed by using the listing page's own
+   `<time date="...">` attribute instead, which is genuinely
+   per-article and reliable.
+
+2. **Multi-paragraph speeches truncated to one sentence.** The site
+   only labels the FIRST paragraph of a speaker's turn with a
+   `<strong>` tag; all following paragraphs in that same turn are
+   unlabeled plain `<p>` tags. Initial extraction required a label on
+   every paragraph, so only the opening line of most speeches was
+   captured (avg. text length ~3,100 chars). Fixed by tracking "current
+   speaker" across unlabeled paragraphs until a new labeled speaker (or
+   a section-break marker) appears. After the fix, avg. text length
+   rose to ~22,000-27,000 chars -- a more plausible length for full
+   press conference transcripts including Q&A.
+
+3. **Unrecognized speakers (moderator, crowd chants) leaking through.**
+   A logic bug meant that ANY labeled paragraph got appended regardless
+   of whether the speaker matched Sheinbaum's name, as long as it
+   wasn't on an explicit exclude list. This let moderator introductions
+   and crowd "¡Viva!" chants leak into her attributed text. Fixed by
+   flipping the logic: only append when the speaker is POSITIVELY
+   confirmed as her, not merely "not on the exclude list."
+
+For AMLO, the older site template (pre-Oct 2024) turned out to have no
+`<strong>` tags at all -- speaker labels are plain text like
+"PRESIDENTE ANDRÉS MANUEL LÓPEZ OBRADOR: ..." Required a different,
+text-pattern-based speaker detection (all-caps text before a colon)
+rather than the tag-based approach used for Sheinbaum.
+
+## Validation approach
+- **Automated checks** across full datasets: null date count (0 for
+  both), duplicate detection (6 confirmed exact duplicates removed from
+  Sheinbaum's 927-row initial pull, caused by the same kind of
+  pagination-boundary overlap seen in the Trump dataset; 0 duplicates
+  in AMLO's 254 rows), text-length distribution sanity checks.
+- **Manual leak-checks**: searched both datasets for common other-speaker
+  identifiers (governors, secretaries, moderator, crowd). All matches
+  found were confirmed to be Sheinbaum/AMLO using those words naturally
+  in their own speech (e.g. "I want to thank the Secretary of..."), not
+  actual leaked paragraphs from other speakers.
+- **Source spot-checks**: for Sheinbaum, two windows (2026-07-01 to
+  07-13, and 2026-06-17 to 06-29) were checked against the live listing
+  page -- both came back with zero missing entries. For AMLO, the
+  2024-06-10 to 06-20 window was checked the same way; one apparent
+  discrepancy (source showing 2 entries for 06-10, dataset showing 1)
+  turned out to be correct: the second entry was a press conference by
+  Sheinbaum as president-elect during the transition, correctly
+  excluded from AMLO's own dataset.
+- **Full manual read-through**: one complete Sheinbaum transcript
+  (Reforestación, Aug 9 2026) read start to finish -- coherent, no
+  leaked or duplicated content, natural beginning and ending.
+
+**Scope of validation:** as with Trump, these spot-checks cover
+specific windows (~40-50 entries total across both leaders), not every
+row individually. Confidence in the rest rests on the same fixes being
+applied uniformly across the full re-scrape, plus multiple independent
+windows (spanning different months/years) coming back clean.
+
+## Translation
+Both datasets translated to English via `translate_csv.py --language es`
+(Google Translate primary, MyMemoryTranslator fallback), adding
+`title_en` and `full_text_en` columns alongside the Spanish originals.
+- Sheinbaum: 901/901 rows translated, 0 failed chunks.
+- AMLO: 254/254 rows translated, 0 failed chunks.
+
+One chunk initially failed on both translators and left a
+`[TRANSLATION FAILED FOR THIS SECTION: ...]` placeholder in one
+Sheinbaum row (2024-10-15, US-Mexico CEO summit results). Root cause:
+the MyMemoryTranslator fallback was being passed a bare language code
+(`"es"`) instead of the locale-formatted code it expects (`"es-ES"`),
+so it rejected the request outright. Fixed in `translate_helper.py` by
+adding a source-language mapping for the fallback translator; affected
+row was cleared and successfully re-translated. Worth checking for the
+same issue on any other language if this fallback path triggers again
+elsewhere (e.g. Moldova, once that source is identified).
+
+## Known limitations
+- AMLO's original source (`gob.mx/presidencia/articulos/...` for his
+  term) is dead -- pages redirect to the homepage. Cannot be
+  re-scraped or re-verified from that original path if the `/amlo/...`
+  path is ever also removed. Treat AMLO's dataset with the same care
+  as Trump's Jan-Apr 2025 whitehouse.gov-sourced rows.
+- The source site is intermittently flaky (~500 errors observed on
+  both listing and article pages, self-recovering on retry most of the
+  time). A listing page that fails all retries would be silently
+  skipped with no visible gap in the output -- this is a known risk,
+  not something this validation pass can fully rule out. If exact
+  per-day completeness ever matters for analysis, this is the first
+  place to check.
+- Deduplication is based on exact match of (date, title); near-duplicates
+  with minor text differences would not be caught.
