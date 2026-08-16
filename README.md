@@ -706,3 +706,66 @@ elsewhere (e.g. Moldova, once that source is identified).
   place to check.
 - Deduplication is based on exact match of (date, title); near-duplicates
   with minor text differences would not be caught.
+
+# Moldova — Maia Sandu: Coverage & Validation Notes
+
+## Source
+Official presidency site, English "Speeches and Messages" archive:
+`presedinte.md/eng/discursuri`. Content is native English (no
+translation needed). No bot detection encountered -- scraped with
+plain `requests`, no `curl_cffi`/impersonation required. Single-speaker
+curated speeches (not multi-participant press conference transcripts
+like Mexico/Trump/Biden), so no speaker-attribution filtering needed.
+
+## Coverage
+- **Total rows:** 52
+- **Date range:** 2024-01-01 to 2026-07-15 (today's latest available
+  on the source as of this scrape)
+- This is a curated "major speeches" archive (roughly 1-2 entries per
+  month), not a daily press-briefing feed -- 52 rows over 2.5 years is
+  the expected density for this source, not a sign of missing data.
+
+## Bug found and fixed (Aug 2026)
+Some articles on this site embed part of their content as a bulleted
+list (`<ul><li><p>...</p></li></ul>`) rather than plain paragraphs
+directly inside the article container. The initial extraction only
+matched `<p>` tags whose *immediate* parent had the `article-type`
+class -- paragraphs nested one level deeper inside `<li>` tags were
+silently skipped, since their direct parent was `<li>`, not the
+article container itself.
+
+This caused several joint-statement-style articles (which list out
+several agreement points as bullets) to be truncated to just their
+opening sentence. Example: a Jan 25, 2025 joint statement with Ukraine
+was captured as 302 characters (just the intro line) before the fix;
+6,955 characters (full list of 7+ agreement points) after.
+
+**Fix:** changed the extraction to check whether the article container
+is an *ancestor* anywhere up the tag tree (`p.find_parent(class_=
+"article-type")`), not just the immediate parent -- correctly captures
+both flat paragraphs and paragraphs nested inside list items.
+
+## Validation approach
+- **Automated checks**: null date count (0), duplicate detection (0
+  duplicates by date+title), text-length distribution review (min
+  length rose from 302 to 1,497 chars after the bug fix, confirming
+  the fix's impact across the dataset, not just the one example row).
+- **Source spot-checks**: three independent windows checked against
+  the live archive listing, spanning the full date range:
+  - 2026-04-26 to 2026-07-15 (10 entries) -- all matched.
+  - 2024-06-01 to 2024-12-31 (5 entries) -- all matched.
+  - 2024-01-01 to 2024-05-31 (7 entries) -- all matched.
+  All three came back with zero missing or extra entries.
+
+## Known limitations
+- As with other sources, these spot-checks cover specific windows
+  (~22 entries out of 52 total, but including both the earliest and
+  most recent parts of the range), not a row-by-row check of every
+  entry. Given the bug found affected content depth (paragraph
+  extraction) rather than which articles get listed at all, and the
+  three checked windows -- spanning the very start, middle, and very
+  end of the range -- all came back clean, confidence in the full
+  dataset is high.
+- No translation needed (source is native English), so the usual
+  translation-related risks (chunking, fallback-translator language
+  codes) don't apply here.

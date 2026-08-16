@@ -179,6 +179,34 @@
       "start": "2024-01-01",
       "end": "2024-09-30"
     }
+  },
+  {
+    "country": "Moldova",
+    "leader": "Maia Sandu",
+    "role": "President",
+    "sex": "F",
+    "base_url": "https://presedinte.md/eng/discursuri",
+    "language": "English",
+    "tenure_end": null,
+    "key": "moldova",
+    "date_range": {
+      "start": "2024-01-01",
+      "end": "2026-12-31"
+    }
+  },
+  {
+    "country": "Moldova",
+    "leader": "Maia Sandu",
+    "role": "President",
+    "sex": "F",
+    "base_url": "https://presedinte.md/eng/discursuri",
+    "language": "English",
+    "tenure_end": null,
+    "key": "moldova",
+    "date_range": {
+      "start": "2024-01-01",
+      "end": "2026-12-31"
+    }
   }
   ]
 }

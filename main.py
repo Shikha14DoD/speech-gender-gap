@@ -26,6 +26,7 @@ from src.utils import write_csv
 from src.scraper_trump import parse_trump
 from src.scraper_trump_early2025 import parse_trump_early2025
 from src.scraper_amlo import parse_amlo
+from src.scraper_moldova import parse_moldova
 from src.utils import write_csv
 
 # As we add more countries, we register their parser functions here.
@@ -43,6 +44,7 @@ PARSERS = {
     "mexico": parse_mexico,
     "trumpearly": parse_trump_early2025,
     "mexico_amlo": parse_amlo,
+    "moldova": parse_moldova,
 }
 
 
