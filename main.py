@@ -27,8 +27,9 @@ from src.scraper_trump import parse_trump
 from src.scraper_trump_early2025 import parse_trump_early2025
 from src.scraper_amlo import parse_amlo
 from src.scraper_moldova import parse_moldova
-from src.scraper_canada import parse_canada
+from src.scraper_canada import parse_canada, parse_canada_videos
 from src.utils import write_csv
+
 
 # As we add more countries, we register their parser functions here.
 PARSERS = {
@@ -48,6 +49,8 @@ PARSERS = {
     "moldova": parse_moldova,
     "canada_trudeau": parse_canada,
     "canada_carney": parse_canada,
+    "canada_trudeau_videos": parse_canada_videos,
+    "canada_carney_videos": parse_canada_videos,
 }
 
 

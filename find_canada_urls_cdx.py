@@ -12,16 +12,24 @@ Run from your project root:
 import requests
 import json
 
-CATEGORIES = ["speeches", "statements"]  # news-releases/readouts excluded --
-                                          # see scraper_canada.py docstring
+CATEGORIES = ["speeches", "statements", "videos"]  # news-releases/readouts excluded --
+                                          # see scraper_canada.py docstring. "videos" added
+                                          # to cover Trudeau-era content, since the live
+                                          # /en/videos listing only shows the current
+                                          # government's era (same issue as /en/news/).
 
 all_urls = set()
 
 for category in CATEGORIES:
     print(f"Querying CDX for category: {category}")
+    if category == "videos":
+        cdx_path = "pm.gc.ca/en/videos/"
+    else:
+        cdx_path = f"pm.gc.ca/en/news/{category}/"
+
     cdx_url = (
         "http://web.archive.org/cdx/search/cdx"
-        f"?url=pm.gc.ca/en/news/{category}/"
+        f"?url={cdx_path}"
         "&matchType=prefix"
         "&output=json"
         "&filter=statuscode:200"
@@ -51,7 +59,7 @@ print()
 print(f"Total unique URLs found: {len(all_urls)}")
 
 import re
-date_pattern = re.compile(r"/news/[a-z-]+/(2024|2025|2026)/\d{2}/\d{2}/")
+date_pattern = re.compile(r"/(news/[a-z-]+|videos)/(2024|2025|2026)/\d{2}/\d{2}/")
 filtered_urls = set(u for u in all_urls if date_pattern.search(u))
 print(f"URLs matching 2024-2026 with a real date+slug pattern: {len(filtered_urls)}")
 

@@ -874,3 +874,158 @@ Trump/TrumpEarly and Mexico's Sheinbaum/AMLO split.
   deliberately excluded from this dataset (see Scope decision above).
   If Ginette wants that content in the future, it needs new work: per-
   quote speaker attribution logic, not just the current extraction.
+
+
+  # Canada — Justin Trudeau & Mark Carney: Coverage & Validation Notes
+
+## Source
+Official PMO site, `pm.gc.ca`. Native English, no translation needed.
+No bot detection encountered.
+
+**Unusual discovery method required.** The site's own listing pages
+(`/en/news/speeches`, `/en/news/statements`, etc.) are JavaScript-
+rendered -- confirmed via manual testing that the static HTML has an
+empty content section even though a browser shows articles after JS
+runs. Extensive dev-tools investigation (Network tab, both filtered
+to Fetch/XHR and unfiltered) found no working API endpoint either.
+
+**Workaround:** individual article pages ARE fully server-rendered and
+scrapeable directly once you have their URL. Historical URLs were
+discovered via the **Wayback Machine CDX API**, querying for every
+archived URL under `/en/news/speeches/` and `/en/news/statements/`
+(see `find_canada_urls_cdx.py`). Per this project's established lesson
+that CDX *crawl* dates are unreliable, filtering to the 2024-2026
+window was done via each URL's own embedded date
+(`/category/YYYY/MM/DD/slug`), not the crawl timestamp.
+
+## Scope decision: speeches + statements only
+The site also has `news-releases` and `readouts` categories using the
+same URL pattern. These were tested and excluded: they frequently mix
+in direct quotes from OTHER officials (cabinet ministers, mayors,
+foreign leaders) alongside the PM's own words, which would require
+much more careful per-quote speaker attribution to avoid misattributing
+someone else's words to the PM. Speeches and statements are the PM's
+own words throughout, matching this project's existing single-speaker-
+source pattern (e.g. Moldova).
+
+## Two leaders, one scraper
+Since Trudeau (until 2025-03-14) and Carney (from 2025-03-14) share the
+same site/scraper logic, one `scraper_canada.py` file is used with two
+config entries (`canada_trudeau`, `canada_carney`) differentiated by
+`date_range` and `leader` fields, following the same pattern as
+Trump/TrumpEarly and Mexico's Sheinbaum/AMLO split.
+
+## Coverage
+- **Trudeau:** 325 rows, 2024-01-01 to 2025-03-10 (his last entry
+  before Carney's swearing-in).
+- **Carney:** 310 rows, 2025-03-18 to 2026-08-18 (an ~8-day transition
+  gap between the two is expected, not a bug).
+- Zero null dates, zero duplicates in either file after cleanup.
+- Coverage spans three categories: speeches, statements, and videos
+  (the last discovered mid-build -- see below). "videos" turned out to
+  contain substantial, significant full transcripts (UN General
+  Assembly remarks, National Day for Truth and Reconciliation remarks,
+  First Ministers' Meeting remarks, etc.) not present in
+  speeches/statements at all.
+
+## The "videos" category discovery
+Partway through validation, a substantial additional content category
+was found: `pm.gc.ca/en/videos/`, hosting full speech transcripts not
+present in speeches/statements at all. Unlike those two categories,
+`/en/videos`'s LIVE listing page is server-rendered (not JS-rendered)
+and could be paginated directly -- but only reaches back to the
+current government's era (Carney), same limitation as the JS-rendered
+news listing for Trudeau. Historical (Trudeau-era) videos were
+recovered by adding "videos" to the same CDX-based discovery already
+used for speeches/statements.
+
+This meant Carney's video content was discoverable through TWO
+independent paths (live pagination AND CDX), which frequently returned
+the same article under different URLs (`/en/news/speeches/...` vs.
+`/en/videos/...`) with minor text differences between the two page
+templates (not exact duplicates, so exact-match dedup didn't catch
+them). Resolved via `merge_canada_carney.py`: merge both sources,
+dedupe by URL, then by exact content match, then for any remaining
+same-date+title pairs, keep the longer/more complete version.
+
+## Bugs found and fixed (Aug 2026)
+1. **Wrong content div selected.** The article body's class
+   (`field--name-body`) is shared by 4 different divs on each page,
+   including an empty search-box widget that happened to be the FIRST
+   match. `soup.find(...)` grabbed that one, returning "Type
+   keyword(s)Search..." instead of the real article. Fixed by
+   selecting the div with the most text content among all matches,
+   not just the first one found.
+2. **Tracking-parameter URL duplicates.** The same article was often
+   crawled multiple times under different URLs due to social-sharing
+   tracking parameters (`?fbclid=...`, `?s=09`, `?ref=...`). This
+   inflated duplicate rates to ~20-28% before a fix (vs. ~1-2% seen on
+   other sources). Fixed by stripping query strings before deduping
+   the candidate URL list. A small number of genuine duplicates (same
+   article under two different slugs, e.g. after a URL rename) were
+   also found and removed via exact-text-match deduplication after
+   scraping.
+3. **CDX recency gap.** Wayback Machine hadn't yet crawled a statement
+   published ~10 days before a validation check, so it was silently
+   absent from the candidate URL list -- not a scraper bug, but an
+   inherent limitation of using an external archive for URL discovery.
+   Partially mitigated by supplementing the CDX-derived list with the
+   live RSS feed's ~10 most recent items each time the URL list is
+   regenerated. This does NOT fully solve the problem -- content newer
+   than the most recent URL-list generation will still be missing
+   until the next run.
+
+## Validation approach
+- Automated checks: null dates (0), duplicates (0 after cleanup), text
+  length distribution review.
+- **Independent cross-check via live RSS feed** (separate from the
+  CDX-based discovery method used for the bulk of the data): compared
+  the ~10 most recent live RSS items against `canada_carney.csv`.
+  After fixes, all `/statements/` and `/speeches/` items were
+  correctly present; all `/news-releases/`, `/readouts/`, and
+  `/media-advisories/` items were correctly absent (excluded
+  categories, not a gap).
+- Manual read-through of one full speech confirmed coherent,
+  un-truncated, correctly-attributed text.
+
+## Content classification: joint/multilateral statements
+A meaningful share of both leaders' entries are joint or multilateral
+documents (G7/G20 leaders' statements, bilateral joint statements with
+other countries' leaders) rather than the leader's own individual
+remarks -- e.g. a G7 Leaders' Communique from the June 2024 Apulia
+summit, co-authored by all G7 leaders, happened to be the single
+longest entry in the whole dataset (128,256 characters). These are
+hosted on pm.gc.ca (each participating country's site likely has an
+identical copy) but aren't uniquely Trudeau's or Carney's own words.
+
+Per project methodology (retain all content, classify rather than
+filter at scrape time), these are KEPT, but flagged via a new
+`is_joint_multilateral` boolean column (see `flag_joint_statements.py`,
+keyword-matched on title: G7/G20/G8, "joint statement", "joint
+declaration", "leaders' statement", etc.) so they can be included or
+excluded downstream as needed.
+- Trudeau: 27/325 rows (8%) flagged.
+- Carney: 51/310 rows (16%) flagged.
+This same pattern likely exists in other countries' datasets too
+(e.g. Moldova's EU-leaders statement, Trump's joint statements with
+foreign leaders) but hasn't been systematically flagged there yet --
+worth applying `flag_joint_statements.py` project-wide if this
+distinction matters for the analysis.
+
+## Known limitations
+- **Historical completeness cannot be fully guaranteed.** Since
+  discovery relies on Wayback Machine's crawl history rather than a
+  live, authoritative listing, any article Wayback never crawled --
+  for any reason, not just recency -- would be silently absent with no
+  general way to detect it except spot-checks like the RSS comparison
+  done here. This is a structurally different (and harder to fully
+  rule out) risk than the other countries' scrapers, which page
+  through a live, complete listing.
+- The RSS supplement only patches the *most recent* ~10 items each
+  time the URL list is regenerated -- re-run `find_canada_urls_cdx.py`
+  shortly before any future scrape to minimize this gap, but treat the
+  dataset as "current as of last URL-list generation," not live.
+- `news-releases` and `readouts` categories exist on this site but are
+  deliberately excluded from this dataset (see Scope decision above).
+  If Ginette wants that content in the future, it needs new work: per-
+  quote speaker attribution logic, not just the current extraction.

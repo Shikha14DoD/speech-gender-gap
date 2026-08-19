@@ -99,16 +99,84 @@ def parse_canada(leader_config: dict, start_date: str, end_date: str,
     return speeches
 
 
-def _fetch_article(url: str, leader_config: dict) -> Optional[Speech]:
+def parse_canada_videos(leader_config: dict, start_date: str, end_date: str,
+                         limit: Optional[int] = None) -> List[Speech]:
+    """
+    Separate discovery path for the /en/videos/ category -- unlike
+    /en/news/speeches and /en/news/statements, this listing page IS
+    server-rendered and can be paginated directly, no CDX workaround
+    needed. Found (Aug 2026) to contain substantial full speech
+    transcripts not present in speeches/statements at all (e.g. UN
+    General Assembly remarks, National Day for Truth and
+    Reconciliation remarks).
+    """
+    print(f"== Canada Videos ({leader_config['leader']}) ==")
+    speeches: List[Speech] = []
+    page = 0  # site uses 0-indexed ?page= param
+
+    while True:
+        url = f"https://www.pm.gc.ca/en/videos?page={page}"
+        html = _get(url)
+        if html is None:
+            break
+        soup = BeautifulSoup(html, "html.parser")
+
+        # Links directly under the listing, each followed by "Date YYYY-MM-DD"
+        candidates = []
+        for a in soup.find_all("a", href=True):
+            if "/en/videos/" in a["href"] and a["href"].rstrip("/") != "https://www.pm.gc.ca/en/videos":
+                time_tag = a.find_next("time", attrs={"datetime": True})
+                if time_tag:
+                    listing_date = time_tag["datetime"][:10]
+                    candidates.append((a["href"], listing_date))
+
+        if not candidates:
+            print(f"  [info] no more videos on page {page}, stopping.")
+            break
+
+        if page % 5 == 0:
+            print(f"  page {page}: checking {len(candidates)} candidate links...")
+
+        stop_all = False
+        for href, listing_date in candidates:
+            full_url = href if href.startswith("http") else f"https://www.pm.gc.ca{href}"
+            if listing_date < start_date:
+                stop_all = True
+                break
+            if listing_date > end_date:
+                continue
+            article = _fetch_article(full_url, leader_config, listing_date)
+            if article is None:
+                continue
+            if in_date_range(article.date, start_date, end_date):
+                speeches.append(article)
+            if limit and len(speeches) >= limit:
+                stop_all = True
+                break
+
+        if stop_all:
+            break
+
+        page += 1
+        if page > 100:  # safety cap
+            break
+
+    return speeches
+
+
+def _fetch_article(url: str, leader_config: dict, listing_date: Optional[str] = None) -> Optional[Speech]:
     html = _get(url)
     if html is None:
         return None
     soup = BeautifulSoup(html, "html.parser")
 
     date_meta = soup.find("meta", attrs={"name": "dcterms.issued"})
-    if not date_meta or not date_meta.get("content"):
+    if date_meta and date_meta.get("content"):
+        date_iso = date_meta["content"].strip()[:10]
+    elif listing_date:
+        date_iso = listing_date
+    else:
         return None
-    date_iso = date_meta["content"].strip()[:10]
 
     title_tag = soup.find("title")
     title = title_tag.get_text(strip=True) if title_tag else url
