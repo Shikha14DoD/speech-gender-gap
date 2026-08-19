@@ -207,6 +207,34 @@
       "start": "2024-01-01",
       "end": "2026-12-31"
     }
+  },
+  {
+    "country": "Canada",
+    "leader": "Justin Trudeau",
+    "role": "Prime Minister",
+    "sex": "M",
+    "base_url": "https://www.pm.gc.ca/en/news",
+    "language": "English",
+    "tenure_end": "2025-03-14",
+    "key": "canada_trudeau",
+    "date_range": {
+      "start": "2024-01-01",
+      "end": "2025-03-13"
+    }
+  },
+  {
+    "country": "Canada",
+    "leader": "Mark Carney",
+    "role": "Prime Minister",
+    "sex": "M",
+    "base_url": "https://www.pm.gc.ca/en/news",
+    "language": "English",
+    "tenure_end": null,
+    "key": "canada_carney",
+    "date_range": {
+      "start": "2025-03-14",
+      "end": "2026-12-31"
+    }
   }
   ]
 }
