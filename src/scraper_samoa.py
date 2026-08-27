@@ -126,6 +126,22 @@ def _fetch_article(url: str, leader_config: dict) -> Optional[Speech]:
     paragraphs = [clean_text(p.get_text(separator=" ")) for p in content_div.find_all("p")]
     full_text = clean_text("\n\n".join(p for p in paragraphs if p))
 
+    # Fallback: some posts embed Facebook content directly, where
+    # paragraphs are <div dir="auto"> tags (Facebook's own markup
+    # convention), not <p> tags. If normal extraction found nothing,
+    # try this pattern before giving up.
+    if not full_text:
+        fb_divs = content_div.find_all("div", attrs={"dir": "auto"})
+        fb_paragraphs = [clean_text(d.get_text(separator=" ")) for d in fb_divs]
+        # Avoid duplicates from nested divs matching the same text twice
+        seen = set()
+        deduped = []
+        for p in fb_paragraphs:
+            if p and p not in seen:
+                seen.add(p)
+                deduped.append(p)
+        full_text = clean_text("\n\n".join(deduped))
+
     return Speech(
         country=leader_config["country"],
         leader=leader_config["leader"],

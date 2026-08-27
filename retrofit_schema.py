@@ -12,6 +12,7 @@ import pandas as pd
 
 LEADER_QID_MAP = {
     "Joe Biden": "Q6279",
+    "Fiamē Naomi Mataʻafa": "Q5446290",
     "Nataša Pirc Musar": "Q12797332",
     "Donald Trump": "Q22686",
     "Claudia Sheinbaum Pardo": "Q5771800",
