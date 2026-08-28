@@ -92,7 +92,7 @@
   "tenure_end": null,
   "key": "barbados",
   "date_range": {
-    "start": "2025-02-05",
+    "start": "2023-01-01",
     "end": "2026-12-31"
   }
 },
@@ -261,6 +261,20 @@
     "key": "canada_carney_videos",
     "date_range": {
       "start": "2025-03-14",
+      "end": "2026-12-31"
+    }
+  },
+  {
+    "country": "Barbados",
+    "leader": "Mia Mottley",
+    "role": "Prime Minister",
+    "sex": "F",
+    "base_url": "https://pmo.gov.bb",
+    "language": "English",
+    "tenure_end": null,
+    "key": "barbados_archive",
+    "date_range": {
+      "start": "2023-01-01",
       "end": "2026-12-31"
     }
   }

@@ -45,6 +45,85 @@ def _curl_get(url: str, max_retries: int = 3, delay_seconds: float = 2.0) -> Opt
     print(f"  [error] giving up on {url}")
     return None
 
+def parse_barbados_archive(leader_config: dict, start_date: str, end_date: str,
+                            limit: Optional[int] = None) -> List[Speech]:
+    """
+    Alternative discovery route via WordPress's month-based date
+    archive (pmo.gov.bb/YYYY/MM/), instead of the /category/latest/
+    listing. Found (Aug 2026) after the category-based approach only
+    surfaced ~47 candidates total, missing all of Jan-Sep 2023 and
+    much of 2024 entirely -- the month archive reaches back much
+    further and isn't affected by the "Speeches" category tag
+    breaking after Feb 2025, since it doesn't rely on any tag at all.
+    """
+    print("== Barbados (month archive) ==")
+    speeches: List[Speech] = []
+    seen_urls = set()
+    total_candidates = [0]
+    rejected = [0]
+
+    import datetime
+    start_dt = datetime.date.fromisoformat(start_date)
+    end_dt = datetime.date.fromisoformat(end_date)
+    if end_dt > datetime.date.today():
+        end_dt = datetime.date.today()
+
+    months = []
+    y, m = start_dt.year, start_dt.month
+    while (y, m) <= (end_dt.year, end_dt.month):
+        months.append((y, m))
+        m += 1
+        if m > 12:
+            m = 1
+            y += 1
+
+    for y, m in months:
+        page = 1
+        while True:
+            url = f"https://pmo.gov.bb/{y}/{m:02d}/" if page == 1 else f"https://pmo.gov.bb/{y}/{m:02d}/page/{page}/"
+            resp = _curl_get(url)
+            if resp is None:
+                break
+            soup = BeautifulSoup(resp, "html.parser")
+
+            entries = []
+            for h2 in soup.find_all("h2"):
+                a = h2.find("a", href=True)
+                if not a:
+                    continue
+                href = a["href"]
+                if re.search(r"pmo\.gov\.bb/\d{4}/\d{2}/\d{2}/", href):
+                    entries.append(href)
+
+            if not entries:
+                break
+
+            print(f"  {y}-{m:02d} page {page}: {len(entries)} candidate links")
+
+            for href in entries:
+                if href in seen_urls:
+                    continue
+                seen_urls.add(href)
+                total_candidates[0] += 1
+                article = _fetch_article(href, leader_config)
+                if article is None:
+                    rejected[0] += 1
+                    print(f"    [rejected] {href}")
+                    continue
+                if in_date_range(article.date, start_date, end_date):
+                    speeches.append(article)
+                if limit and len(speeches) >= limit:
+                    print(f"  TOTAL candidates seen: {total_candidates[0]}, rejected: {rejected[0]}, kept: {len(speeches)}")
+                    return speeches
+
+            page += 1
+            if page > 10:
+                break
+
+    print(f"  TOTAL candidates seen: {total_candidates[0]}, rejected by content filter: {rejected[0]}, kept: {len(speeches)}")
+    return speeches
+
+
 def parse_barbados(leader_config: dict, start_date: str, end_date: str,
                     limit: Optional[int] = None) -> List[Speech]:
     print("== Barbados ==")
@@ -96,8 +175,13 @@ def parse_barbados(leader_config: dict, start_date: str, end_date: str,
             if article is None:
                 continue
             if article.date and article.date < start_date:
-                stop_all = True  # correctly-paginated feed; safe to trust order now
-                break
+                # Don't trust a single old date as proof we've reached
+                # the archive's end -- a "Recent Posts" sidebar widget
+                # can inject out-of-sequence old posts into any page
+                # (confirmed: a 2022 post appeared mixed into a
+                # 2024-dated page). Just skip this one entry instead
+                # of stopping the whole scrape.
+                continue
             if article.likely_speech == "no":
                 continue
             if in_date_range(article.date, start_date, end_date):
