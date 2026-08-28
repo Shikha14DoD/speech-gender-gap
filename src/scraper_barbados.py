@@ -222,8 +222,31 @@ def _fetch_article(url: str, leader_config: dict) -> Optional[Speech]:
         date_iso = f"{y}-{mo}-{d}"
 
     content_div = soup.find("article") or soup.find("main") or soup
-    paragraphs = [clean_text(p.get_text(separator=" ")) for p in content_div.find_all("p")]
-    full_text = clean_text("\n\n".join(p for p in paragraphs if p))
+    all_paragraphs = [p.get_text(separator=" ").strip() for p in content_div.find_all("p")]
+
+    # Some posts are multi-speaker UN/international session transcripts
+    # where paragraphs open with a bracket speaker label like "[H.E. Ms.
+    # Mia Amor Mottley, Prime Minister of Barbados, ...]" followed by
+    # that speaker's own remarks, until the next bracket label. If any
+    # such markers exist and one names her, extract ONLY her section(s)
+    # instead of the whole multi-speaker document.
+    bracket_indices = [i for i, p in enumerate(all_paragraphs)
+                        if re.match(r"^\[.{2,150}\]$", p)]
+    her_paragraphs = []
+    if bracket_indices:
+        for idx_pos, start_idx in enumerate(bracket_indices):
+            label = all_paragraphs[start_idx]
+            if "mottley" not in label.lower():
+                continue
+            end_idx = bracket_indices[idx_pos + 1] if idx_pos + 1 < len(bracket_indices) else len(all_paragraphs)
+            her_paragraphs.extend(all_paragraphs[start_idx + 1:end_idx])
+
+    if her_paragraphs:
+        paragraphs = [clean_text(p) for p in her_paragraphs]
+        full_text = clean_text("\n\n".join(p for p in paragraphs if p))
+    else:
+        paragraphs = [clean_text(p) for p in all_paragraphs]
+        full_text = clean_text("\n\n".join(p for p in paragraphs if p))
     # Exclude content that isn't genuinely her own words:
     # - journalist-bylined news articles ("BY [Name]")
     # - administrative/procedural documents (appointment lists, travel
