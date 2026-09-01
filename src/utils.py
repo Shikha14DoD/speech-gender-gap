@@ -86,11 +86,16 @@ import os
 
 
 def write_csv(speeches: list, out_path: str):
-    """Append a list of Speech records to a CSV file, writing headers only if new."""
+    """Append a list of Speech records to a CSV file, writing headers only if new.
+
+    Uses QUOTE_ALL (every field quoted) per the project's CSV rules --
+    speech text is full of commas, quotes and line breaks, so quoting
+    must never be left to the writer's discretion.
+    """
     fieldnames = [f.name for f in dataclasses.fields(Speech)]
     write_header = not os.path.exists(out_path)
     with open(out_path, "a", newline="", encoding="utf-8") as f:
-        writer = csv.DictWriter(f, fieldnames=fieldnames)
+        writer = csv.DictWriter(f, fieldnames=fieldnames, quoting=csv.QUOTE_ALL)
         if write_header:
             writer.writeheader()
         for s in speeches:
