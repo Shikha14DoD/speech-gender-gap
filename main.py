@@ -29,6 +29,7 @@ from src.scraper_amlo import parse_amlo
 from src.scraper_moldova import parse_moldova
 from src.scraper_canada import parse_canada, parse_canada_videos
 from src.scraper_barbados import parse_barbados, parse_barbados_archive
+from src.scraper_chile import parse_chile
 from src.utils import write_csv
 
 
@@ -53,6 +54,7 @@ PARSERS = {
     "canada_trudeau_videos": parse_canada_videos,
     "canada_carney_videos": parse_canada_videos,
     "barbados_archive": parse_barbados_archive,
+    "chile": parse_chile,
 }
 
 

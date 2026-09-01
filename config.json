@@ -277,6 +277,34 @@
       "start": "2023-01-01",
       "end": "2026-12-31"
     }
+  },
+  {
+    "country": "Chile",
+    "leader": "Gabriel Boric Font",
+    "role": "President",
+    "sex": "M",
+    "base_url": "https://prensa.presidencia.cl/discursos.aspx",
+    "language": "Spanish",
+    "tenure_end": "2026-03-11",
+    "key": "chile",
+    "date_range": {
+      "start": "2023-01-01",
+      "end": "2026-03-11"
+    }
+  },
+  {
+    "country": "Colombia",
+    "leader": "Gustavo Petro",
+    "role": "President",
+    "sex": "M",
+    "base_url": "https://www.presidencia.gov.co/prensa/Paginas/Discursos.aspx",
+    "language": "Spanish",
+    "tenure_end": "2026-08-07",
+    "key": "colombia",
+    "date_range": {
+      "start": "2023-01-01",
+      "end": "2026-08-07"
+    }
   }
   ]
 }
