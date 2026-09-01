@@ -19,12 +19,18 @@ single paragraphs longer than the chunk limit):
 - Delay between requests increased.
 """
 
+import os
 import time
 from typing import Optional
 
 from deep_translator import GoogleTranslator, MyMemoryTranslator
 
-CHUNK_CHAR_LIMIT = 800  # keep chunks modest, but the real fix is below --
+# Default 800 (tuned for dense Chinese, where Google's free endpoint
+# fails intermittently at any size -- see note below). For languages
+# that translate cleanly at larger sizes (e.g. Spanish), set
+# TRANSLATE_CHUNK_LIMIT in the environment to go several times faster.
+CHUNK_CHAR_LIMIT = int(os.environ.get("TRANSLATE_CHUNK_LIMIT", "800"))
+_CHUNK_DEFAULT = 800  # keep chunks modest, but the real fix is below --
                         # the free Google Translate endpoint fails
                         # intermittently regardless of size (confirmed via
                         # testing: 700/800/1000 succeeded, 900/1100 failed
