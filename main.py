@@ -31,6 +31,7 @@ from src.scraper_canada import parse_canada, parse_canada_videos
 from src.scraper_barbados import parse_barbados, parse_barbados_archive
 from src.scraper_chile import parse_chile
 from src.scraper_colombia import parse_colombia
+from src.scraper_colombia_pdf import parse_colombia_pdf
 from src.utils import write_csv
 
 
@@ -57,6 +58,7 @@ PARSERS = {
     "barbados_archive": parse_barbados_archive,
     "chile": parse_chile,
     "colombia": parse_colombia,
+    "colombia_pdf": parse_colombia_pdf,
 }
 
 

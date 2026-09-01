@@ -305,6 +305,20 @@
       "start": "2023-01-01",
       "end": "2026-08-07"
     }
+  },
+  {
+    "country": "Colombia",
+    "leader": "Gustavo Petro",
+    "role": "President",
+    "sex": "M",
+    "base_url": "https://portalparalapaz.gov.co/",
+    "language": "Spanish",
+    "tenure_end": "2026-08-07",
+    "key": "colombia_pdf",
+    "date_range": {
+      "start": "2023-01-01",
+      "end": "2026-08-07"
+    }
   }
   ]
 }
