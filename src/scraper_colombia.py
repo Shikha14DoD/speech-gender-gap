@@ -224,13 +224,20 @@ def _strip_zw(s: str) -> str:
                         0xfeff: None, 0x00ad: None})
 
 
+_FOOTER = re.compile(
+    r"\s*Fuente\s*:\s*Presidencia\s+de\s+la\s+[¬\-\s]*Rep[uú\wí]*"
+    r".*?Edici[oó]n\s*:\s*Unidad\s+de\s+Implementaci[oó]n\s+del\s+Acuerdo\s+de\s+Paz\.?",
+    re.I | re.S)
+
+
 def _clean_body(body) -> str:
     for tag in body.select("script, style"):
         tag.decompose()
     text = body.get_text("\n")
     text = text.translate({0x200b: None, 0x200c: None, 0x200d: None,
-                           0xfeff: None, 0x00ad: None})
+                           0xfeff: None, 0x00ad: None, 0x00ac: None})
     text = re.sub(r"^\s*Contenido de la p[aá]gina\s*", "", text, flags=re.I)
+    text = _FOOTER.sub("", text)  # editorial provenance footer, not speech
     text = clean_text(text)
     text = re.sub(r"\n\s*\n+", "\n\n", text)
     return text.strip()

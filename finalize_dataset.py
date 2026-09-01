@@ -24,6 +24,7 @@ Usage:
 
 import argparse
 import csv
+import re
 import sys
 from urllib.parse import urlsplit, urlunsplit, parse_qsl, urlencode
 
@@ -51,7 +52,11 @@ def norm_url(u: str) -> str:
     kept = [(k, v) for k, v in parse_qsl(parts.query, keep_blank_values=True)
             if not (k.lower().startswith("utm_") or k.lower() in TRACKING_PARAMS)]
     query = urlencode(kept)
-    return urlunsplit((scheme, netloc, path, query, ""))
+    # keep the fragment -- it can be a real record locator (e.g. a
+    # #page=N anchor into a multi-speech PDF volume), the same way
+    # YouTube's ?v= is meaningful. Only tracking params are dropped.
+    fragment = parts.fragment
+    return urlunsplit((scheme, netloc, path, query, fragment))
 
 
 def fix(s):
@@ -158,9 +163,18 @@ def main():
 
     out = build(raw, args.language, args.leader_qid)
 
-    # ---- URL dedup -------------------------------------------------------
-    out["_key"] = out["source_url"]
-    dup_mask = out["_key"].duplicated(keep=False) & out["_key"].ne("")
+    # ---- URL dedup -----------------------------------------------------
+    # For most sources source_url is unique per speech. For a multi-speech
+    # PDF volume the locator is <url>#page=N and two speeches can share a
+    # page, so those rows are disambiguated by date + title before dedup;
+    # a genuine duplicate (same url, date and title) still collapses.
+    def _dupkey(r):
+        u = r["source_url"]
+        if "#page=" in u:
+            return f"{u}|{r['date']}|{re.sub(r'[^a-z0-9]', '', r['title'].lower())[:40]}"
+        return u
+    out["_key"] = out.apply(_dupkey, axis=1)
+    dup_mask = out["_key"].duplicated(keep=False) & out["source_url"].ne("")
     suspected_dups = out.loc[dup_mask, ["date", "title", "source_url"]].copy()
     # keep the longest full_text per url
     out["_len"] = out["full_text"].str.len()

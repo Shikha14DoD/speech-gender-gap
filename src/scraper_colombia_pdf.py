@@ -82,6 +82,28 @@ _HEADER = (r"(Apartes de las palabras|Palabras|Alocuci[oó]n|Intervenci[oó]n|"
            r"\s+del?\s+(?:se[nñ]or\s+)?[Pp]residente")
 _DATELINE = (r"([A-Za-zÁÉÍÓÚÑáéíóúñ.'\- ]{2,50}?),\s*"
              r"(\d{1,2})\s+de\s+([A-Za-zÁÉÍÓÚáéíóú]+)\s+de\s+(20\d{2})")
+# every speech in the volumes ends with this boilerplate footer. The
+# embedded presidencia.gov.co URL is often mangled across lines (soft
+# hyphens rendered as U+00AC, spaces turned to hyphens) so it is not
+# recovered; the footer is used purely as a hard speech boundary and
+# stripped from the body. Very lenient on purpose.
+_FOOTER = re.compile(
+    r"\s*Fuente\s*:\s*Presidencia\s+de\s+la\s+[¬\-\s]*Rep[uú\wí]*"
+    r".*?Edici[oó]n\s*:\s*Unidad\s+de\s+Implementaci[oó]n\s+del\s+Acuerdo\s+de\s+Paz\.?",
+    re.I | re.S,
+)
+# also its translated form (appears in full_text_en only; harmless here)
+_FOOTER_EN = re.compile(
+    r"\s*Source\s*:\s*Presidency\s+of\s+the\s+Rep.*?"
+    r"Edition\s*:\s*Peace\s+Agreement\s+Implementation\s+Unit\.?",
+    re.I | re.S,
+)
+_PHOTO_BLOCK = re.compile(
+    r"\s*(Agradecemos el apoyo de la Presidencia.*?material fotogr[aá]fico\s*:.*$)"
+    r"|(\n[A-ZÁÉÍÓÚ][\wÁÉÍÓÚáéíóúñ .'\-]{2,40}\s*[-–]\s*Fot[oó]graf[oa]s?\s+[Pp]residencia.*$)"
+    r"|(\s*Fot[oó]graf[oa]\s+[Pp]residencial?\s*[:.]?\s*[A-ZÁÉÍÓÚ][\wÁÉÍÓÚáéíóúñ .'\-]*$)",
+    re.I | re.S,
+)
 
 
 def _get(url: str, retries: int = 4) -> Optional[bytes]:
@@ -121,11 +143,36 @@ def _page_texts(pdf: bytes) -> List[str]:
     return [doc[i].get_text() for i in range(doc.page_count)]
 
 
+def _mk_title(full: str, h_start: int, t_end: int) -> str:
+    title = full[h_start: min(t_end, h_start + 240)]
+    title = re.split(r"\n\s*\n", title)[0]
+    title = clean_text(re.sub(r"\s+", " ", title)).strip(" .,-:")
+    if len(title) > 170:
+        title = title[:170].rsplit(" ", 1)[0] + "…"
+    return title
+
+
+def _body(full: str, start: int, end: int) -> str:
+    seg = full[start:end]
+    seg = _FOOTER.sub("", seg)
+    seg = _FOOTER_EN.sub("", seg)
+    seg = _PHOTO_BLOCK.sub("", seg)
+    seg = _FOOTER.sub("", seg)  # a second speech's footer can precede a merge
+    lines = seg.lstrip().split("\n")
+    while lines and 0 < len(lines[0].strip()) < 95 and not re.search(r"[.:;!?]$", lines[0].strip()):
+        lines.pop(0)
+    return _clean("\n".join(lines))
+
+
 def _split_speeches(pages: List[str]):
-    """Yield (title, iso_date, venue, body, start_page). An entry anchor
-    is a dateline and a speech header within ~400 chars of each other,
-    in either order."""
-    # page offsets so we can report a #page anchor
+    """Yield (title, iso_date, venue, body, start_page, orig_url).
+
+    Boundaries: every speech ends with the "Fuente: Presidencia ...
+    Edicion: Unidad de Implementacion del Acuerdo de Paz" footer, so we
+    cut on that first; within each footer-delimited chunk we locate the
+    header + dateline. Chunks with a header but no footer (e.g. the last
+    speech of a volume, or newer volumes that dropped the footer) fall
+    back to header/dateline anchors."""
     offsets, acc = [], 0
     for p in pages:
         offsets.append(acc)
@@ -135,52 +182,52 @@ def _split_speeches(pages: List[str]):
     header_re = re.compile(_HEADER)
     date_re = re.compile(_DATELINE)
 
-    anchors = []
-    for hm in header_re.finditer(full):
-        window = full[max(0, hm.start() - 350): hm.end() + 350]
-        dm = date_re.search(window)
-        if not dm:
-            continue
-        d_abs = max(0, hm.start() - 350) + dm.start()
-        anchor_pos = min(hm.start(), d_abs)
-        content_pos = max(hm.start(), d_abs + len(dm.group(0)))
-        iso = _iso(dm.group(2), dm.group(3), dm.group(4))
-        venue = clean_text(dm.group(1)).strip(" .,-\n")
-        # title: header text up to the dateline (if it follows) or up to a
-        # blank line / 160 chars, whichever comes first
-        t_end = d_abs if d_abs > hm.start() else hm.start() + 200
-        title = full[hm.start(): min(t_end, hm.start() + 240)]
-        title = re.split(r"\n\s*\n", title)[0]
-        title = clean_text(re.sub(r"\s+", " ", title)).strip(" .,-:")
-        # trim a trailing epigraph: everything is the title up to the last
-        # word before a lone capitalised fragment is hard to detect, so
-        # just cap length and let the epigraph be a minor tail
-        if len(title) > 170:
-            title = title[:170].rsplit(" ", 1)[0] + "…"
-        anchors.append((anchor_pos, content_pos, title, iso, venue))
+    # footer-delimited chunk boundaries
+    cuts = [0]
+    for fm in _FOOTER.finditer(full):
+        cuts.append(fm.end())
+    cuts.append(len(full))
+    chunks = [(cuts[i], cuts[i + 1]) for i in range(len(cuts) - 1)]
 
-    anchors.sort()
-    deduped = []
-    for a in anchors:
-        if deduped and a[0] - deduped[-1][0] < 200:
+    for c_start, c_end in chunks:
+        seg = full[c_start:c_end]
+        if len(seg.strip()) < 300:
             continue
-        deduped.append(a)
-
-    for i, (pos, content_pos, title, iso, venue) in enumerate(deduped):
-        end = deduped[i + 1][0] if i + 1 < len(deduped) else len(full)
-        body = full[content_pos:end]
-        # drop a leading short epigraph/subtitle line (no sentence punctuation)
-        lines = body.lstrip().split("\n")
-        while lines and 0 < len(lines[0].strip()) < 95 and not re.search(r"[.:;!?]$", lines[0].strip()):
-            lines.pop(0)
-        body = _clean("\n".join(lines))
-        start_page = max(j for j, off in enumerate(offsets) if off <= pos)
-        yield title, iso, venue, body, start_page + 1
+        # all header/dateline anchors inside this chunk
+        anchors = []
+        for hm in header_re.finditer(seg):
+            win = seg[max(0, hm.start() - 350): hm.end() + 350]
+            dm = date_re.search(win)
+            if not dm:
+                continue
+            d_abs = max(0, hm.start() - 350) + dm.start()
+            iso = _iso(dm.group(2), dm.group(3), dm.group(4))
+            venue = clean_text(dm.group(1)).strip(" .,-\n")
+            content_pos = max(hm.start(), d_abs + len(dm.group(0)))
+            t_end = d_abs if d_abs > hm.start() else hm.start() + 200
+            anchors.append((min(hm.start(), d_abs), content_pos,
+                            _mk_title(seg, hm.start(), t_end), iso, venue))
+        anchors.sort()
+        merged = []
+        for a in anchors:
+            if merged and a[0] - merged[-1][0] < 200:
+                continue
+            merged.append(a)
+        if not merged:
+            continue
+        for j, (pos, content_pos, title, iso, venue) in enumerate(merged):
+            seg_end = merged[j + 1][0] if j + 1 < len(merged) else len(seg)
+            body = _body(seg, content_pos, seg_end)
+            if len(body) < 250:
+                continue
+            abs_pos = c_start + pos
+            start_page = max(k for k, off in enumerate(offsets) if off <= abs_pos)
+            yield title, iso, venue, body, start_page + 1, ""
 
 
 def _clean(text: str) -> str:
     text = text.translate({0x200b: None, 0x200c: None, 0x200d: None,
-                           0xfeff: None, 0x00ad: None})
+                           0xfeff: None, 0x00ad: None, 0x00ac: None})
     # de-hyphenate words split across line breaks
     text = re.sub(r"(\w)-\n(\w)", r"\1\2", text)
     text = re.sub(r"[ \t]+", " ", text)
@@ -210,7 +257,7 @@ def parse_colombia_pdf(leader_config: dict, start_date: str, end_date: str,
             continue
 
         n_here = 0
-        for title, iso, venue, body, page_no in _split_speeches(pages):
+        for title, iso, venue, body, page_no, orig_url in _split_speeches(pages):
             stats["entries"] += 1
             if not body or len(body) < 250:
                 continue
@@ -238,6 +285,10 @@ def parse_colombia_pdf(leader_config: dict, start_date: str, end_date: str,
                                 "(portions) of the speech, not the full text -- "
                                 "the delivered speech is longer than what is here.")
 
+            # prefer the original presidencia.gov.co URL recovered from
+            # the speech's footer; fall back to a #page anchor into the
+            # volume PDF
+            src = orig_url if orig_url.startswith("http") else f"{url}#page={page_no}"
             speeches.append(Speech(
                 country=leader_config["country"],
                 leader=leader_config["leader"],
@@ -246,14 +297,15 @@ def parse_colombia_pdf(leader_config: dict, start_date: str, end_date: str,
                 title=title,
                 full_text=body,
                 language="Spanish",
-                source_url=f"{url}#page={page_no}",
+                source_url=src,
                 likely_speech="yes",
                 content_type="Speech",
                 notes=(f"From the Colombian government's official compilation "
-                       f"'Discursos del presidente Gustavo Petro' ({vol_name}), "
-                       f"published at portalparalapaz.gov.co. Dateline venue: "
-                       f"{venue or 'n/a'}. full_text/title are Spanish -- run "
-                       f"translate_csv.py --language es." + excerpt_note + kind),
+                       f"'Discursos del presidente Gustavo Petro' ({vol_name} "
+                       f"page {page_no}), published at portalparalapaz.gov.co. "
+                       f"Dateline venue: {venue or 'n/a'}. full_text/title are "
+                       f"Spanish -- run translate_csv.py --language es."
+                       + excerpt_note + kind),
             ))
             n_here += 1
             if limit and len(speeches) >= limit:
