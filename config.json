@@ -319,6 +319,20 @@
       "start": "2023-01-01",
       "end": "2026-08-07"
     }
+  },
+  {
+    "country": "New Zealand",
+    "leader": "Jacinda Ardern / Chris Hipkins / Christopher Luxon",
+    "role": "Prime Minister",
+    "sex": "F/M/M",
+    "base_url": "https://www.beehive.govt.nz/speeches",
+    "language": "English",
+    "tenure_end": null,
+    "key": "newzealand",
+    "date_range": {
+      "start": "2023-01-01",
+      "end": "2026-12-31"
+    }
   }
   ]
 }

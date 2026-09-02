@@ -39,6 +39,15 @@ SCHEMA = [
 
 TRACKING_PARAMS = {"fbclid", "gclid", "gclsrc", "dclid", "msclkid", "mc_cid", "mc_eid", "yclid"}
 
+# used when --leader-qid auto (a dataset with more than one leader)
+LEADER_QID = {
+    "Gabriel Boric Font": "Q16297876",
+    "Gustavo Petro": "Q704022",
+    "Jacinda Ardern": "Q3606816",
+    "Chris Hipkins": "Q5106890",
+    "Christopher Luxon": "Q74370310",
+}
+
 
 def norm_url(u: str) -> str:
     if not isinstance(u, str) or not u.strip():
@@ -95,7 +104,13 @@ def build(df: pd.DataFrame, language: str, leader_qid: str) -> pd.DataFrame:
 
     out["country"] = df["country"].map(fix)
     out["leader"] = df["leader"].map(fix)
-    out["leader_qid"] = leader_qid
+    if leader_qid == "auto":
+        out["leader_qid"] = out["leader"].map(LEADER_QID).fillna("")
+        missing = out.loc[out["leader_qid"].eq(""), "leader"].unique().tolist()
+        if missing:
+            print(f"WARNING: no QID mapping for leader(s): {missing}")
+    else:
+        out["leader_qid"] = leader_qid
     out["role"] = df["role"].map(fix)
     out["date"] = df["date"].astype("string").fillna("")
     # Chile/Colombia press feeds publish same-day; no separate publication
