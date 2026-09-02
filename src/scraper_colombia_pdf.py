@@ -164,9 +164,11 @@ def _pdf_lines(pdf: bytes):
 
 _BOILER = re.compile(
     r"^\s*(Fuente\s*:\s*Presidencia|Source\s*:\s*Presidency|Edici[oó]n\s*:\s*Unidad|"
-    r"Edition\s*:\s*Peace|https?://|[¬-]?[\wÁÉÍÓÚáéíóúñ¬]+(-[\wÁÉÍÓÚáéíóúñ¬]+)+-?\d{6}\.aspx|"
-    r"Agradecemos el apoyo|"
-    r"[A-ZÁÉÍÓÚ][\wÁÉÍÓÚáéíóúñ .'\-]{2,40}\s*[-–]\s*Fot[oó]graf[oa]|"
+    r"Edition\s*:\s*Peace|https?://|"
+    r"[¬\w][\wÁÉÍÓÚáéíóúñ¬ .-]*\.aspx\s*$|"  # any wrapped source-URL fragment line
+    r"Agradecemos el apoyo|de material fotogr[aá]fico|un aporte a la memoria|"
+    r"ecci[oó]n de los discursos del presidente|de los discursos del presidente Gustavo Petro\s*:|"
+    r"[A-ZÁÉÍÓÚ][\wÁÉÍÓÚáéíóúñ .'\-]{2,45}\s*[-–]\s*(Fot[oóáà]graf[oa]|Coordinador)|"
     r"Ideas vivas, ideas solidarias|los discursos del presidente\s*$|"
     r"Gustavo Petro en la Colombia\s*$|potencia de la vida\.?\s*$|"
     r"en la Colombia\s*$|Tomo \d+\s*$|Cartilla\s*(No\.?\s*)?\d*\s*$)", re.I)
@@ -192,14 +194,24 @@ def _split_speeches(pages_pdf: bytes):
         if not c:
             return None
         body = _clean("\n".join(c[4]))
+        body = re.sub(r"^\s*" + _DATELINE + r"\s*", "", body)
+        body = re.split(r"\n[^\n]*(un aporte a la memoria|"
+                        r"Agradecemos el apoyo de la Presidencia|"
+                        r"de los discursos del presidente Gustavo Petro\s*:)",
+                        body)[0]
+        body = body.strip()
         if len(body) >= 250:
-            return (c[0], c[1], c[2], body, c[3], "")
+            return (c[0], c[1], c[2], body, c[3], c[5])
         return None
 
     i = 0
+    last_hdr_end = -99
+    last_iso = None  # carry-forward within a volume (speeches are chronological)
     while i < n:
         txt, big, page = lines[i]
-        if big and hdr.search(txt):
+        # a new speech starts at a big-font line that is a "<header> del
+        # presidente" -- even if this run carries no dateline of its own
+        if big and hdr.search(txt) and i - last_hdr_end > 3:
             j0 = i
             while j0 > 0 and lines[j0 - 1][1]:
                 j0 -= 1
@@ -209,19 +221,28 @@ def _split_speeches(pages_pdf: bytes):
             run = lines[j0:j1 + 1]
             run_txt = " ".join(r[0] for r in run)
             dm = dl.search(run_txt)
+            if not dm:
+                near = " ".join(l[0] for l in lines[max(0, j0 - 8):j1 + 25])
+                dm = dl.search(near)
+            done = finish(cur)
+            if done:
+                yield done
+            approx = False
             if dm:
-                done = finish(cur)
-                if done:
-                    yield done
                 iso = _iso(dm.group(2), dm.group(3), dm.group(4))
                 venue = clean_text(dm.group(1)).strip(" .,-\n")
-                title_txt = dl.sub("", run_txt)
-                title_txt = re.sub(r"\s+", " ", title_txt).strip(" .,-:")
-                if len(title_txt) > 200:
-                    title_txt = title_txt[:200].rsplit(" ", 1)[0] + "…"
-                cur = (title_txt, iso, venue, run[0][2], [])
-                i = j1 + 1
-                continue
+                if iso:
+                    last_iso = iso
+            else:
+                iso, venue, approx = last_iso, "", True
+            title_txt = dl.sub("", run_txt)
+            title_txt = re.sub(r"\s+", " ", title_txt).strip(" .,-:")
+            if len(title_txt) > 200:
+                title_txt = title_txt[:200].rsplit(" ", 1)[0] + "…"
+            cur = (title_txt, iso, venue, run[0][2], [], approx)
+            last_hdr_end = j1
+            i = j1 + 1
+            continue
         if cur is not None:
             cur[4].append(txt)
         i += 1
@@ -263,7 +284,7 @@ def parse_colombia_pdf(leader_config: dict, start_date: str, end_date: str,
             continue
 
         n_here = 0
-        for title, iso, venue, body, page_no, orig_url in entries:
+        for title, iso, venue, body, page_no, approx_date in entries:
             stats["entries"] += 1
             if not body or len(body) < 250:
                 continue
@@ -291,10 +312,13 @@ def parse_colombia_pdf(leader_config: dict, start_date: str, end_date: str,
                                 "(portions) of the speech, not the full text -- "
                                 "the delivered speech is longer than what is here.")
 
-            # prefer the original presidencia.gov.co URL recovered from
-            # the speech's footer; fall back to a #page anchor into the
-            # volume PDF
-            src = orig_url if orig_url.startswith("http") else f"{url}#page={page_no}"
+            approx_note = ""
+            if approx_date:
+                approx_note = (" APPROX DATE: no dateline printed for this "
+                               "speech in the volume -- date carried forward "
+                               "from the preceding speech (volumes are "
+                               "chronological); verify before use.")
+
             speeches.append(Speech(
                 country=leader_config["country"],
                 leader=leader_config["leader"],
@@ -303,7 +327,7 @@ def parse_colombia_pdf(leader_config: dict, start_date: str, end_date: str,
                 title=title,
                 full_text=body,
                 language="Spanish",
-                source_url=src,
+                source_url=f"{url}#page={page_no}",
                 likely_speech="yes",
                 content_type="Speech",
                 notes=(f"From the Colombian government's official compilation "
@@ -311,7 +335,7 @@ def parse_colombia_pdf(leader_config: dict, start_date: str, end_date: str,
                        f"page {page_no}), published at portalparalapaz.gov.co. "
                        f"Dateline venue: {venue or 'n/a'}. full_text/title are "
                        f"Spanish -- run translate_csv.py --language es."
-                       + excerpt_note + kind),
+                       + excerpt_note + kind + approx_note),
             ))
             n_here += 1
             if limit and len(speeches) >= limit:
