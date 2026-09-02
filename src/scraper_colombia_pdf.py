@@ -138,91 +138,97 @@ def _iso(day: str, mon_word: str, year: str) -> Optional[str]:
         return None
 
 
-def _page_texts(pdf: bytes) -> List[str]:
+def _pdf_lines(pdf: bytes):
+    """Return [(text, is_big, page_no)] in reading order, where is_big
+    marks a line whose font is materially larger than the body font
+    (titles, datelines, epigraphs and section sub-headings are all set
+    larger/bold than the speech text in these volumes)."""
     doc = pymupdf.open(stream=pdf, filetype="pdf")
-    return [doc[i].get_text() for i in range(doc.page_count)]
+    raw, sizes = [], {}
+    for pno in range(doc.page_count):
+        d = doc[pno].get_text("dict", sort=True)
+        for b in d["blocks"]:
+            for ln in b.get("lines", []):
+                spans = ln.get("spans", [])
+                txt = "".join(s["text"] for s in spans).strip()
+                if not txt:
+                    continue
+                sz = max((s["size"] for s in spans), default=0)
+                raw.append((txt, sz, pno + 1))
+                sizes[round(sz)] = sizes.get(round(sz), 0) + len(txt)
+    if not sizes:
+        return []
+    body_sz = max(sizes, key=sizes.get)
+    return [(t, sz > body_sz + 1.0, p) for t, sz, p in raw]
 
 
-def _mk_title(full: str, h_start: int, t_end: int) -> str:
-    title = full[h_start: min(t_end, h_start + 240)]
-    title = re.split(r"\n\s*\n", title)[0]
-    title = clean_text(re.sub(r"\s+", " ", title)).strip(" .,-:")
-    if len(title) > 170:
-        title = title[:170].rsplit(" ", 1)[0] + "…"
-    return title
+_BOILER = re.compile(
+    r"^\s*(Fuente\s*:\s*Presidencia|Source\s*:\s*Presidency|Edici[oó]n\s*:\s*Unidad|"
+    r"Edition\s*:\s*Peace|https?://|[¬-]?[\wÁÉÍÓÚáéíóúñ¬]+(-[\wÁÉÍÓÚáéíóúñ¬]+)+-?\d{6}\.aspx|"
+    r"Agradecemos el apoyo|"
+    r"[A-ZÁÉÍÓÚ][\wÁÉÍÓÚáéíóúñ .'\-]{2,40}\s*[-–]\s*Fot[oó]graf[oa]|"
+    r"Ideas vivas, ideas solidarias|los discursos del presidente\s*$|"
+    r"Gustavo Petro en la Colombia\s*$|potencia de la vida\.?\s*$|"
+    r"en la Colombia\s*$|Tomo \d+\s*$|Cartilla\s*(No\.?\s*)?\d*\s*$)", re.I)
 
 
-def _body(full: str, start: int, end: int) -> str:
-    seg = full[start:end]
-    seg = _FOOTER.sub("", seg)
-    seg = _FOOTER_EN.sub("", seg)
-    seg = _PHOTO_BLOCK.sub("", seg)
-    seg = _FOOTER.sub("", seg)  # a second speech's footer can precede a merge
-    lines = seg.lstrip().split("\n")
-    while lines and 0 < len(lines[0].strip()) < 95 and not re.search(r"[.:;!?]$", lines[0].strip()):
-        lines.pop(0)
-    return _clean("\n".join(lines))
-
-
-def _split_speeches(pages: List[str]):
+def _split_speeches(pages_pdf: bytes):
     """Yield (title, iso_date, venue, body, start_page, orig_url).
 
-    Boundaries: every speech ends with the "Fuente: Presidencia ...
-    Edicion: Unidad de Implementacion del Acuerdo de Paz" footer, so we
-    cut on that first; within each footer-delimited chunk we locate the
-    header + dateline. Chunks with a header but no footer (e.g. the last
-    speech of a volume, or newer volumes that dropped the footer) fall
-    back to header/dateline anchors."""
-    offsets, acc = [], 0
-    for p in pages:
-        offsets.append(acc)
-        acc += len(p) + 2
-    full = "\n\n".join(pages)
+    A speech begins at a run of large-font lines that contains both a
+    "<header> del presidente ..." line and a "<Ciudad>, <D> de <mes> de
+    <YYYY>" dateline. The whole large run becomes the title (any epigraph
+    is folded in -- harmless); the body is every line after the run,
+    small or large, up to the next such run. Boilerplate footer / photo
+    lines are dropped."""
+    lines = [ln for ln in _pdf_lines(pages_pdf) if not _BOILER.search(ln[0])]
+    hdr = re.compile(_HEADER)
+    dl = re.compile(_DATELINE)
+    n = len(lines)
 
-    header_re = re.compile(_HEADER)
-    date_re = re.compile(_DATELINE)
+    cur = None  # (title, iso, venue, page, [body lines])
 
-    # footer-delimited chunk boundaries
-    cuts = [0]
-    for fm in _FOOTER.finditer(full):
-        cuts.append(fm.end())
-    cuts.append(len(full))
-    chunks = [(cuts[i], cuts[i + 1]) for i in range(len(cuts) - 1)]
+    def finish(c):
+        if not c:
+            return None
+        body = _clean("\n".join(c[4]))
+        if len(body) >= 250:
+            return (c[0], c[1], c[2], body, c[3], "")
+        return None
 
-    for c_start, c_end in chunks:
-        seg = full[c_start:c_end]
-        if len(seg.strip()) < 300:
-            continue
-        # all header/dateline anchors inside this chunk
-        anchors = []
-        for hm in header_re.finditer(seg):
-            win = seg[max(0, hm.start() - 350): hm.end() + 350]
-            dm = date_re.search(win)
-            if not dm:
+    i = 0
+    while i < n:
+        txt, big, page = lines[i]
+        if big and hdr.search(txt):
+            j0 = i
+            while j0 > 0 and lines[j0 - 1][1]:
+                j0 -= 1
+            j1 = i
+            while j1 + 1 < n and lines[j1 + 1][1]:
+                j1 += 1
+            run = lines[j0:j1 + 1]
+            run_txt = " ".join(r[0] for r in run)
+            dm = dl.search(run_txt)
+            if dm:
+                done = finish(cur)
+                if done:
+                    yield done
+                iso = _iso(dm.group(2), dm.group(3), dm.group(4))
+                venue = clean_text(dm.group(1)).strip(" .,-\n")
+                title_txt = dl.sub("", run_txt)
+                title_txt = re.sub(r"\s+", " ", title_txt).strip(" .,-:")
+                if len(title_txt) > 200:
+                    title_txt = title_txt[:200].rsplit(" ", 1)[0] + "…"
+                cur = (title_txt, iso, venue, run[0][2], [])
+                i = j1 + 1
                 continue
-            d_abs = max(0, hm.start() - 350) + dm.start()
-            iso = _iso(dm.group(2), dm.group(3), dm.group(4))
-            venue = clean_text(dm.group(1)).strip(" .,-\n")
-            content_pos = max(hm.start(), d_abs + len(dm.group(0)))
-            t_end = d_abs if d_abs > hm.start() else hm.start() + 200
-            anchors.append((min(hm.start(), d_abs), content_pos,
-                            _mk_title(seg, hm.start(), t_end), iso, venue))
-        anchors.sort()
-        merged = []
-        for a in anchors:
-            if merged and a[0] - merged[-1][0] < 200:
-                continue
-            merged.append(a)
-        if not merged:
-            continue
-        for j, (pos, content_pos, title, iso, venue) in enumerate(merged):
-            seg_end = merged[j + 1][0] if j + 1 < len(merged) else len(seg)
-            body = _body(seg, content_pos, seg_end)
-            if len(body) < 250:
-                continue
-            abs_pos = c_start + pos
-            start_page = max(k for k, off in enumerate(offsets) if off <= abs_pos)
-            yield title, iso, venue, body, start_page + 1, ""
+        if cur is not None:
+            cur[4].append(txt)
+        i += 1
+
+    done = finish(cur)
+    if done:
+        yield done
 
 
 def _clean(text: str) -> str:
@@ -250,14 +256,14 @@ def parse_colombia_pdf(leader_config: dict, start_date: str, end_date: str,
         stats["vols"] += 1
         vol_name = url.rsplit("/", 1)[-1]
         try:
-            pages = _page_texts(pdf)
+            entries = list(_split_speeches(pdf))
         except Exception as e:
             print(f"  [warn] could not open {vol_name}: {e}")
             stats["vol_fail"].append(url)
             continue
 
         n_here = 0
-        for title, iso, venue, body, page_no, orig_url in _split_speeches(pages):
+        for title, iso, venue, body, page_no, orig_url in entries:
             stats["entries"] += 1
             if not body or len(body) < 250:
                 continue
