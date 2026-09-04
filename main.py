@@ -33,6 +33,7 @@ from src.scraper_chile import parse_chile
 from src.scraper_colombia import parse_colombia
 from src.scraper_colombia_pdf import parse_colombia_pdf
 from src.scraper_newzealand import parse_newzealand
+from src.scraper_australia import parse_australia
 from src.utils import write_csv
 
 
@@ -61,6 +62,7 @@ PARSERS = {
     "colombia": parse_colombia,
     "colombia_pdf": parse_colombia_pdf,
     "newzealand": parse_newzealand,
+    "australia": parse_australia,
 }
 
 

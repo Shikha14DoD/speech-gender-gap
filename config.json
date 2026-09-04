@@ -333,6 +333,20 @@
       "start": "2023-01-01",
       "end": "2026-12-31"
     }
+  },
+  {
+    "country": "Australia",
+    "leader": "Anthony Albanese",
+    "role": "Prime Minister",
+    "sex": "M",
+    "base_url": "https://www.pm.gov.au/media",
+    "language": "English",
+    "tenure_end": null,
+    "key": "australia",
+    "date_range": {
+      "start": "2023-01-01",
+      "end": "2026-12-31"
+    }
   }
   ]
 }
