@@ -46,6 +46,10 @@ LEADER_QID = {
     "Jacinda Ardern": "Q3606816",
     "Chris Hipkins": "Q5106890",
     "Christopher Luxon": "Q74370310",
+    "Anthony Albanese": "Q335697",
+    "Ranil Wickremesinghe": "Q983402",
+    "Anura Kumara Dissanayake": "Q4777855",
+    "Harini Amarasuriya": "Q98298397",
 }
 
 

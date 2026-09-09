@@ -347,6 +347,34 @@
       "start": "2023-01-01",
       "end": "2026-12-31"
     }
+  },
+  {
+    "country": "Sri Lanka",
+    "leader": "Ranil Wickremesinghe / Anura Kumara Dissanayake / Harini Amarasuriya",
+    "role": "President / Prime Minister",
+    "sex": "M/M/F",
+    "base_url": "https://www.presidentsoffice.gov.lk/",
+    "language": "English",
+    "tenure_end": null,
+    "key": "srilanka",
+    "date_range": {
+      "start": "2023-01-01",
+      "end": "2026-12-31"
+    }
+  },
+  {
+    "country": "Sri Lanka",
+    "leader": "Anura Kumara Dissanayake / Harini Amarasuriya",
+    "role": "President / Prime Minister",
+    "sex": "M/F",
+    "base_url": "https://www.youtube.com/@PresidentsMediaSriLanka",
+    "language": "Sinhala",
+    "tenure_end": null,
+    "key": "srilanka_video",
+    "date_range": {
+      "start": "2023-01-01",
+      "end": "2026-12-31"
+    }
   }
   ]
 }
