@@ -184,6 +184,30 @@ def _body_el(soup: BeautifulSoup):
     return max(divs, key=lambda d: len(d.get_text()), default=None)
 
 
+# the PMD / Presidential Secretariat pages append a fixed "Mission"
+# blurb, social links and a "Related News" strip after the article
+_BOILER = re.compile(
+    r"\s*\n\s*(Facebook\s*\n\s*Twitter|Mission\s*\n\s*The Presidential Media Division"
+    r"|The Presidential Media Division is fully responsible for socializing"
+    r"|The media department works as a source of information"
+    r"|Related News|Related Posts|Latest News|Recent (News|Posts)|Share this:"
+    r"|Follow us on).*$",
+    re.I | re.S)
+_READMORE = re.compile(r"\s*\n[^\n]{0,160}?[…\.]{1,3}\s+[^\n]{0,180}?Read More.*$",
+                       re.I | re.S)
+
+
+def _strip_boiler(body: str) -> str:
+    body = _BOILER.sub("", body)
+    for _ in range(6):
+        nxt = _READMORE.sub("", body)
+        if nxt == body:
+            break
+        body = nxt
+    body = re.sub(r"^\s*Published on:\s*[A-Za-z]+ \d{1,2},?\s*\d{4}\s*", "", body, flags=re.I)
+    return re.sub(r"\s*Read More\s*$", "", body).strip()
+
+
 def fetch(url: str) -> Tuple[Optional[BeautifulSoup], str]:
     """Live first (skipped for the retired /index.php/ WordPress, which is
     always 404 now), then newest good Wayback snapshot."""
@@ -327,10 +351,12 @@ def parse_srilanka(leader_config: dict, start_date: str, end_date: str,
             date = _slug_date(url) or _text_date(soup)
             body_el = _body_el(soup)
             for tag in body_el.select("script, style, .sharedaddy, .jp-relatedposts, "
-                                      "nav, footer, .related, .social-share"):
+                                      "nav, footer, .related, .social-share, "
+                                      ".wp-block-latest-posts, .yarpp-related"):
                 tag.decompose()
             body = clean_text(body_el.get_text("\n"))
             body = re.sub(r"\n\s*\n+", "\n\n", body).strip()
+            body = _strip_boiler(body)
 
         # require a genuine-transcript title AND enough body
         if not (_TRANSCRIPT_TITLE.search(title) or _TRANSCRIPT_SLUG.search(url)):
