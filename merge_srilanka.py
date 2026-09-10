@@ -57,6 +57,17 @@ def main():
     video = pd.read_csv(VIDEO, dtype=str, keep_default_na=False)
     print(f"TEXT: {len(text)} rows   VIDEO: {len(video)} rows")
 
+    # Video rows with no recoverable English caption carry no linguistic
+    # content -- drop them from the deliverable, list them for the hand-off.
+    nocap = video["full_text"].str.contains("NO ENGLISH AUTO-CAPTION", na=False)
+    if nocap.any():
+        video[nocap][["date", "title", "source_url"]].to_csv(
+            "data/processed/srilanka_video_nocaption.csv", index=False,
+            encoding="utf-8")
+        print(f"VIDEO rows with no English caption (dropped, listed in "
+              f"srilanka_video_nocaption.csv): {int(nocap.sum())}")
+        video = video[~nocap].reset_index(drop=True)
+
     tindex = []
     for _, r in text.iterrows():
         tindex.append((r["leader"], _d(r["date"]), toks(r["title"])))

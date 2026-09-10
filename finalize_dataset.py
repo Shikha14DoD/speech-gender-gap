@@ -78,11 +78,16 @@ def fix(s):
     return ftfy.fix_text(s)
 
 
-def opening_salutation(text: str, n_lines: int = 3) -> str:
+def opening_salutation(text: str, n_lines: int = 3, max_chars: int = 400) -> str:
     if not isinstance(text, str) or not text.strip():
         return ""
     lines = [l.strip() for l in text.replace("\r", "\n").split("\n") if l.strip()]
-    return " / ".join(lines[:n_lines])
+    sal = " / ".join(lines[:n_lines])
+    if len(sal) > max_chars:
+        # single-paragraph sources (e.g. video ASR) have no line breaks, so
+        # "first 3 lines" would be the whole transcript -- clip to the opening.
+        sal = sal[:max_chars].rsplit(" ", 1)[0] + " ..."
+    return sal
 
 
 def type_flag_from_title(title: str) -> str:
