@@ -198,11 +198,13 @@ def parse_srilanka_video(leader_config: dict, start_date: str, end_date: str,
         cap = _english_caption(vid)
         if len(cap) < 200:
             stats["no_caption"] += 1
-            if not dur or dur < 600:
-                # short + no caption -> almost certainly a news-bulletin clip
+            # keep only when it plausibly IS a single presidential speech
+            # YouTube just didn't caption (10-100 min); skip news clips and
+            # multi-hour full-event livestreams
+            if not dur or not (600 <= dur <= 6000):
                 continue
-            # a long speech YouTube simply didn't caption -- keep, flagged
-            cap = "[NO ENGLISH AUTO-CAPTION AVAILABLE FOR THIS VIDEO]"
+            cap = "[NO ENGLISH AUTO-CAPTION AVAILABLE FOR THIS VIDEO -- " \
+                  "the audio is Sinhala; not recoverable via this route]"
 
         leader, role = _which_leader(date, title, desc)
 
