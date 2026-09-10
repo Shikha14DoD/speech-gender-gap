@@ -375,6 +375,34 @@
       "start": "2023-01-01",
       "end": "2026-12-31"
     }
+  },
+  {
+    "country": "Tanzania",
+    "leader": "Samia Suluhu Hassan / Kassim Majaliwa / Mwigulu Nchemba",
+    "role": "President / Prime Minister",
+    "sex": "F/M/M",
+    "base_url": "https://www.ikulu.go.tz/",
+    "language": "Swahili",
+    "tenure_end": null,
+    "key": "tanzania",
+    "date_range": {
+      "start": "2023-01-01",
+      "end": "2026-12-31"
+    }
+  },
+  {
+    "country": "Tanzania",
+    "leader": "Samia Suluhu Hassan / Kassim Majaliwa / Mwigulu Nchemba",
+    "role": "President / Prime Minister",
+    "sex": "F/M/M",
+    "base_url": "https://www.youtube.com/@ikulutanzania255",
+    "language": "Swahili",
+    "tenure_end": null,
+    "key": "tanzania_video",
+    "date_range": {
+      "start": "2023-01-01",
+      "end": "2026-12-31"
+    }
   }
   ]
 }

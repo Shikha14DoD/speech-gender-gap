@@ -50,6 +50,9 @@ LEADER_QID = {
     "Ranil Wickremesinghe": "Q983402",
     "Anura Kumara Dissanayake": "Q4777855",
     "Harini Amarasuriya": "Q98298397",
+    "Samia Suluhu Hassan": "Q16193885",
+    "Kassim Majaliwa": "Q6737420",
+    "Mwigulu Nchemba": "Q31752753",
 }
 
 
