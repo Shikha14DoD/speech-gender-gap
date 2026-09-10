@@ -20,7 +20,9 @@ Companion: `scraper_srilanka.py` (text) and `merge_srilanka.py`.
 
 import os
 import re
+import glob
 import time
+import tempfile
 import datetime as dt
 from typing import List, Optional
 
@@ -36,7 +38,7 @@ import yt_dlp  # noqa: E402
 
 CHANNEL = "https://www.youtube.com/@PresidentsMediaSriLanka"
 YDL_COMMON = {"quiet": True, "no_warnings": True, "skip_download": True,
-              "js_runtimes": {"node": {}}, "ignoreerrors": True}
+              "noprogress": True, "js_runtimes": {"node": {}}, "ignoreerrors": True}
 
 AKD_START = "2024-09-23"
 # The channel is the President's Media Division -- essentially everything
@@ -92,29 +94,60 @@ def _vtt_to_text(vtt: str) -> str:
 
 
 def _english_caption(video_id: str) -> str:
-    """Download YouTube's English (auto-translated) auto-caption as plain text."""
-    try:
-        with _ydl({"writeautomaticsub": True, "subtitleslangs": ["en"],
-                   "subtitlesformat": "vtt"}) as y:
-            info = y.extract_info(f"https://www.youtube.com/watch?v={video_id}",
-                                  download=False)
-    except Exception:
-        return ""
-    auto = (info or {}).get("automatic_captions") or {}
-    tracks = auto.get("en") or auto.get("en-US") or []
-    url = next((t["url"] for t in tracks if t.get("ext") == "vtt"),
-               next((t["url"] for t in tracks), None))
-    if not url:
-        return ""
-    for attempt in range(4):
+    """Download YouTube's English (auto-translated) auto-caption as plain
+    text. Let yt-dlp do the actual fetch (it retries + rotates player
+    clients, which the raw caption URL alone does not)."""
+    for attempt in range(3):
+        tmp = tempfile.mkdtemp(prefix="slcap_")
         try:
-            r = curl_requests.get(url, impersonate="chrome", timeout=40)
-            if r.status_code == 200 and "WEBVTT" in r.text[:200]:
-                return _vtt_to_text(r.text)
-            time.sleep(4 * (attempt + 1))
+            with _ydl({"writeautomaticsub": True, "writesubtitles": False,
+                       "subtitleslangs": ["en", "en-orig", "si-en", "a.en"],
+                       "subtitlesformat": "vtt/srv3/best",
+                       "outtmpl": os.path.join(tmp, "%(id)s.%(ext)s")}) as y:
+                y.download([f"https://www.youtube.com/watch?v={video_id}"])
+            files = (glob.glob(os.path.join(tmp, "*.en.vtt"))
+                     or glob.glob(os.path.join(tmp, "*.en*.vtt"))
+                     or glob.glob(os.path.join(tmp, "*.vtt")))
+            if files:
+                with open(files[0], encoding="utf-8", errors="ignore") as fh:
+                    txt = _vtt_to_text(fh.read())
+                if len(txt) > 60:
+                    return txt
         except Exception:
-            time.sleep(4 * (attempt + 1))
+            pass
+        finally:
+            for f in glob.glob(os.path.join(tmp, "*")):
+                try:
+                    os.remove(f)
+                except OSError:
+                    pass
+            try:
+                os.rmdir(tmp)
+            except OSError:
+                pass
+        time.sleep(5 * (attempt + 1))
     return ""
+
+
+def _english_title(title: str, desc: str) -> str:
+    """PMD video descriptions carry the English headline after the last
+    '|' (Sinhala | Tamil | English). Prefer that; else translate the
+    Sinhala title; else keep the Sinhala title."""
+    for line in desc.splitlines():
+        parts = [p.strip() for p in line.split("|") if p.strip()]
+        if parts:
+            cand = parts[-1]
+            if re.search(r"[A-Za-z]", cand) and not re.search(r"[඀-෿஀-௿]", cand):
+                if len(cand) > 12:
+                    return clean_text(cand)
+    if re.search(r"[඀-෿]", title):
+        try:
+            tr = translate_to_english(title, "si") or ""
+        except Exception:
+            tr = ""
+        if tr and "TRANSLATION FAILED" not in tr:
+            return clean_text(tr)
+    return title
 
 
 def _which_leader(date: Optional[str], title: str, desc: str):

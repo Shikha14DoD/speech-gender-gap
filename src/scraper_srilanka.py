@@ -61,14 +61,18 @@ _PREFIXES = [
 
 # Slug / title markers of a genuine verbatim transcript page (the SL
 # official sites publish mostly third-person news; real transcripts are
-# a minority and are consistently titled).
+# a small, consistently-titled minority).
 _TRANSCRIPT_SLUG = re.compile(
-    r"full[- ]text|"
-    r"(speech|statement|address|remarks|declaration|message|lecture|"
-    r"keynote)[- ](by|of|made[- ]by|delivered|to[- ]the|at[- ]the)|"
+    r"full[- ]text|full[- ]speech|"
+    r"(speech|statement|address|remarks|declaration|lecture|keynote)[- ]"
+    r"(by|of|made[- ]by|delivered|to[- ]the|at[- ]the|while)|"
     r"(delivered|made)[- ]by[- ](his[- ]excellency|president|prime[- ]minister)|"
+    r"(president|prime[- ]minister)[- ][a-z-]+[- ](full[- ]speech|"
+    r"delivers?[- ]a[- ](special[- ])?(statement|address)|"
+    r"special[- ](statement|address)|addresses?[- ](the[- ])?)|"
     r"policy[- ]statement|address[- ]to[- ]the[- ]nation|budget[- ]speech|"
-    r"throne[- ]speech|inaugural[- ]address|independence[- ]day[- ](speech|address)",
+    r"throne[- ]speech|inaugural[- ]address|"
+    r"independence[- ]day[- ](speech|address|message)",
     re.I,
 )
 # title markers of a genuine transcript (broader than the slug rx)
@@ -131,8 +135,10 @@ def discover_urls(start_date: str, end_date: str) -> List[str]:
             for u in rows:
                 if "/_next/" in u or re.search(r"\.(js|css|woff2?|png|jpe?g|svg|ico)$", u, re.I):
                     continue
-                slug = u.split("/")[-1] or u.split("/")[-2]
                 if not (_TRANSCRIPT_SLUG.search(u) or u.lower().endswith("_en.pdf")):
+                    continue
+                sd = _slug_date(u)
+                if sd and not (start_date <= sd <= end_date):
                     continue
                 k = _norm(u)
                 if k in seen:
@@ -179,12 +185,14 @@ def _body_el(soup: BeautifulSoup):
 
 
 def fetch(url: str) -> Tuple[Optional[BeautifulSoup], str]:
-    """Live first, then newest good Wayback snapshot. Returns (soup, source)."""
-    r = _cget(url, PAGE_TIMEOUT, retries=2)
-    if r is not None and not _is_shell(r.text):
-        s = BeautifulSoup(r.text, "html.parser")
-        if _body_el(s) is not None:
-            return s, "live"
+    """Live first (skipped for the retired /index.php/ WordPress, which is
+    always 404 now), then newest good Wayback snapshot."""
+    if "/index.php/" not in url:
+        r = _cget(url, PAGE_TIMEOUT, retries=2)
+        if r is not None and not _is_shell(r.text):
+            s = BeautifulSoup(r.text, "html.parser")
+            if _body_el(s) is not None:
+                return s, "live"
     for ts in _snapshots(url)[:MAX_SNAPSHOTS]:
         rr = _cget(f"{WB}/{ts}id_/{url}", PAGE_TIMEOUT, retries=2)
         if rr is None or _is_shell(rr.text):
