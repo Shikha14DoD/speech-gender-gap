@@ -71,8 +71,12 @@ def main():
         drop |= title_n.str.contains(key.replace("’", "'"), regex=False, case=False)
     drop |= title_n.str.contains(_JOINT)
     drop |= title_n.str.match(_ANNOUNCE)
+    # Some YouTube auto-captions come back as garbled phonetic
+    # transliteration rather than real English MT (low ASR confidence) --
+    # these tend to also be short. Use a slightly higher bar than Sri
+    # Lanka's for that reason.
     wc = d["full_text"].str.split().str.len()
-    drop |= d["source_url"].str.contains("youtube", case=False) & (wc < 250)
+    drop |= d["source_url"].str.contains("youtube", case=False) & (wc < 350)
     for i in d.index[drop]:
         print(f"DROP not-speech   {d.at[i,'date']}  {d.at[i,'title'][:65]}")
     d = d[~drop].reset_index(drop=True)
