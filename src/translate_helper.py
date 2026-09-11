@@ -131,6 +131,8 @@ def translate_to_english(text: str, source_language: str) -> Optional[str]:
 
         # Google's free endpoint failed every retry -- try a completely
         # different translation service as a fallback before giving up.
+        # MyMemory's free API hard-caps requests at 500 chars, which our
+        # chunk limit (tuned for Google) can exceed -- re-split for it.
         if translated is None:
             try:
                 MYMEMORY_SOURCE_MAP = {
@@ -139,8 +141,11 @@ def translate_to_english(text: str, source_language: str) -> Optional[str]:
                 "sw": "sw-KE",}
                 mymemory_source = MYMEMORY_SOURCE_MAP.get(source_language, source_language)
                 fallback = MyMemoryTranslator(source=mymemory_source, target="en-GB")
-                translated = fallback.translate(chunk)
-                print(f"  [info] chunk {i+1}/{len(chunks)} recovered via fallback translator")
+                sub_pieces = _hard_split(chunk, 490)
+                sub_translated = [fallback.translate(p) for p in sub_pieces]
+                translated = " ".join(t for t in sub_translated if t)
+                print(f"  [info] chunk {i+1}/{len(chunks)} recovered via fallback translator"
+                      + (f" ({len(sub_pieces)} sub-pieces)" if len(sub_pieces) > 1 else ""))
             except Exception as e2:
                 last_error = e2
 
