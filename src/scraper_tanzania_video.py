@@ -182,9 +182,19 @@ def _looks_swahili(t: str) -> bool:
     return len(_SW_WORDS.findall(t)) >= 2
 
 
+# the speaker of record is the PM only when the title itself frames it that
+# way (opens with "the speech of ... waziri mkuu/majaliwa/nchemba" etc.) --
+# a bare mention of "prime minister" (a dignitary in the audience, a retired
+# PM's funeral) is not enough, and must not override an explicit "SAMIA"
+_PM_AS_SPEAKER = re.compile(
+    r"^\s*(the )?(speech|statement|remarks|address|hotuba)\b[^|]{0,90}"
+    r"\b(waziri mkuu|prime minister|majaliwa|nchemba)\b", re.I)
+
+
 def _which_leader(date: Optional[str], title: str, desc: str):
-    blob = f"{title}\n{desc}".lower()
-    if re.search(r"waziri mkuu|prime minister|majaliwa|nchemba", blob):
+    if re.search(r"\bsamia\b", title, re.I):
+        return "Samia Suluhu Hassan", "President"
+    if _PM_AS_SPEAKER.search(title):
         if date and date >= MAJALIWA_END:
             return "Mwigulu Nchemba", "Prime Minister"
         return "Kassim Majaliwa", "Prime Minister"
