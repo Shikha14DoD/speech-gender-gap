@@ -19,8 +19,12 @@ Tanzania is mixed, so correct per row:
 
   Swahili-original State House PDFs:
       language       -> Swahili
-      translated     -> yes   (full_text is the Google translation,
-                               original_text is the Swahili PDF text)
+      translated     -> yes if full_text is actually English (the
+                        translation succeeded); "no" if translate_csv.py
+                        never reached it or the translation service failed
+                        for that row -- full_text is still the raw Swahili
+                        in that case, detected via a language heuristic
+                        rather than assumed.
 
 Usage: python fix_tanzania_langfields.py
 """
@@ -29,6 +33,18 @@ import pandas as pd
 
 CSV = "data/processed/tanzania_FINAL.csv"
 MERGED = "data/processed/tanzania_merged.csv"
+
+_SW_HINT = re.compile(
+    r"\b(na|ya|wa|kwa|katika|ni|kwamba|hii|hizo|serikali|watu|nchi|ndugu|"
+    r"waheshimiwa|mheshimiwa|zetu|yetu|hili|ambao|kufanya|maendeleo)\b", re.I)
+_EN_HINT = re.compile(
+    r"\b(the|and|of|to|is|are|this|that|with|for|our|we|will|have)\b", re.I)
+
+
+def _still_swahili(text):
+    sample = text[:4000].lower()
+    return len(_SW_HINT.findall(sample)) > len(_EN_HINT.findall(sample))
+
 
 d = pd.read_csv(CSV, dtype=str, keep_default_na=False)
 
@@ -65,7 +81,15 @@ for i in d.index:
         n_en += 1
     else:
         d.at[i, "language"] = "Swahili"
-        d.at[i, "translated"] = "yes"
+        if _still_swahili(d.at[i, "full_text"]):
+            d.at[i, "translated"] = "no"
+            d.at[i, "notes"] = (
+                d.at[i, "notes"] + " | English translation unavailable: "
+                "the translation service failed or was rate-limited for this "
+                "row; full_text is the original Swahili, untranslated. "
+                "Re-run translate_csv.py on this row when the API quota resets.")
+        else:
+            d.at[i, "translated"] = "yes"
         n_sw += 1
 
 d.to_csv(CSV, index=False, encoding="utf-8")
