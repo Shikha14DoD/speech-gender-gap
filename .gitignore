@@ -15,3 +15,7 @@ data/processed/*
 .DS_Store
 Thumbs.db
 .vscode/
+
+# Claude Code local config/instructions - machine-local, not shared project code
+.claude/
+CLAUDE.md
