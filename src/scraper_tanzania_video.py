@@ -128,20 +128,24 @@ def _vtt_to_text(vtt: str) -> str:
     return clean_text(" ".join(lines))
 
 
-def _english_caption(video_id: str) -> str:
-    """Download YouTube's English (auto-translated) auto-caption as plain
-    text via yt-dlp (it retries + rotates player clients)."""
+def _caption(video_id: str, langs, glob_pats) -> str:
+    """Download an auto-caption track as plain text via yt-dlp (it retries +
+    rotates player clients). `glob_pats` are tried in order against the
+    downloaded filename to pick the right track when yt-dlp saves more than
+    one language."""
     for attempt in range(3):
         tmp = tempfile.mkdtemp(prefix="tzcap_")
         try:
             with _ydl({"writeautomaticsub": True, "writesubtitles": False,
-                       "subtitleslangs": ["en", "en-orig", "sw-en", "a.en"],
+                       "subtitleslangs": langs,
                        "subtitlesformat": "vtt/srv3/best",
                        "outtmpl": os.path.join(tmp, "%(id)s.%(ext)s")}) as y:
                 y.download([f"https://www.youtube.com/watch?v={video_id}"])
-            files = (glob.glob(os.path.join(tmp, "*.en.vtt"))
-                     or glob.glob(os.path.join(tmp, "*.en*.vtt"))
-                     or glob.glob(os.path.join(tmp, "*.vtt")))
+            files = []
+            for pat in glob_pats:
+                files = glob.glob(os.path.join(tmp, pat))
+                if files:
+                    break
             if files:
                 with open(files[0], encoding="utf-8", errors="ignore") as fh:
                     txt = _vtt_to_text(fh.read())
@@ -161,6 +165,19 @@ def _english_caption(video_id: str) -> str:
                 pass
         time.sleep(5 * (attempt + 1))
     return ""
+
+
+def _english_caption(video_id: str) -> str:
+    """YouTube's English (auto-translated) auto-caption."""
+    return _caption(video_id, ["en", "en-orig", "sw-en", "a.en"],
+                    ["*.en.vtt", "*.en*.vtt", "*.vtt"])
+
+
+def _swahili_caption(video_id: str) -> str:
+    """YouTube's native Swahili speech-recognition auto-caption (the
+    pre-translation source text) -- kept as `original_text` so translation
+    quality/coverage of specific terms can be checked against the source."""
+    return _caption(video_id, ["sw"], ["*.sw.vtt", "*.sw*.vtt"])
 
 
 def _english_title(title: str) -> str:
@@ -257,6 +274,11 @@ def parse_tanzania_video(leader_config: dict, start_date: str, end_date: str,
         leader, role = _which_leader(date, title, desc)
         title_en = _english_title(title)
 
+        # The native Swahili auto-caption (the ASR text YouTube translated
+        # FROM) -- kept as original_text so specific terms can be checked
+        # against the source, not just trusted to have survived translation.
+        sw_text = _swahili_caption(vid) if len(cap) >= 200 else ""
+
         speeches.append(Speech(
             country="Tanzania",
             leader=leader,
@@ -273,7 +295,12 @@ def parse_tanzania_video(leader_config: dict, start_date: str, end_date: str,
                    f"-- no punctuation, machine-translation errors, suitable for "
                    f"thematic/word-frequency analysis only, NOT verbatim. "
                    f"Original video title (Swahili): {title!r}. "
-                   f"Duration {dur // 60}m. Source: Ikulu YouTube channel."),
+                   f"Duration {dur // 60}m. Source: Ikulu YouTube channel."
+                   + ("" if sw_text else " Native Swahili auto-caption was "
+                      "not recoverable for this video -- original_text is "
+                      "blank; the English full_text is YouTube's own "
+                      "translation, not independently verified against it.")),
+            original_text=sw_text,
         ))
         by[leader] = by.get(leader, 0) + 1
         if limit and len(speeches) >= limit:

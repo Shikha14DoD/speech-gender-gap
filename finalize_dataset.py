@@ -136,7 +136,14 @@ def build(df: pd.DataFrame, language: str, leader_qid: str) -> pd.DataFrame:
         out["title"] = df["title_en"].map(fix).where(lambda s: s.str.strip().ne(""), orig_title)
         out["full_text"] = df["full_text_en"].map(fix).where(lambda s: s.str.strip().ne(""), orig_text)
         out["original_title"] = orig_title
-        out["original_text"] = orig_text
+        if "original_text" in df.columns:
+            # a scraper (e.g. a video route where full_text is already
+            # English) can supply the real pre-translation source text
+            # directly, instead of finalize assuming full_text was it
+            scraper_orig = df["original_text"].fillna("").map(fix)
+            out["original_text"] = scraper_orig.where(scraper_orig.str.strip().ne(""), orig_text)
+        else:
+            out["original_text"] = orig_text
         out["translated"] = df["full_text_en"].map(
             lambda v: "yes" if isinstance(v, str) and v.strip() else "no")
     else:

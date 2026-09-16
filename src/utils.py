@@ -53,6 +53,13 @@ class Speech:
     likely_speech: str             # "yes" / "maybe" / "no" -- heuristic, not ground truth
     content_type: str = "Other"    # "Speech" / "Interview" / "Statement" / "Other"                               # "Speech" / "Interview" / "Statement" / "Other"
     notes: str = ""
+    # Set by a scraper ONLY when `full_text` is already in English but the
+    # scraper also has the pre-translation source text available (e.g. a
+    # video route that fetched a native-language ASR caption in addition to
+    # the English one). finalize_dataset.py uses this in place of its usual
+    # "full_text before translation" assumption when it's non-empty -- most
+    # scrapers should leave this blank.
+    original_text: str = ""
 
 
 def get(url: str, timeout: int = REQUEST_TIMEOUT) -> Optional[requests.Response]:
