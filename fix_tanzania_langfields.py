@@ -33,6 +33,7 @@ Usage: python fix_tanzania_langfields.py
 """
 import re
 import pandas as pd
+from finalize_dataset import norm_url
 
 CSV = "data/processed/tanzania_FINAL.csv"
 MERGED = "data/processed/tanzania_merged.csv"
@@ -51,11 +52,16 @@ def _still_swahili(text):
 
 d = pd.read_csv(CSV, dtype=str, keep_default_na=False)
 
-# original per-row language, keyed by source_url, from the pre-finalize file
+# original per-row language + scraper-supplied original_text, keyed by
+# source_url, from the pre-finalize file
 orig_lang = {}
+merged_orig_text = {}
 try:
     m = pd.read_csv(MERGED, dtype=str, keep_default_na=False)
-    orig_lang = dict(zip(m["source_url"], m["language"]))
+    m_url = m["source_url"].map(norm_url)   # match finalize_dataset.py's normalization
+    orig_lang = dict(zip(m_url, m["language"]))
+    if "original_text" in m.columns:
+        merged_orig_text = dict(zip(m_url, m["original_text"]))
 except Exception:
     pass
 
@@ -72,9 +78,12 @@ for i in d.index:
         mm = vpat.search(d.at[i, "notes"])
         raw = mm.group(2).strip() if mm else ""
         d.at[i, "original_title"] = raw if (raw and NONLAT_OR_SW.search(raw)) else ""
-        # original_text: finalize_dataset.py already set this from the
-        # scraper's own Swahili-caption fetch when one was recovered --
-        # leave it as-is here rather than blanking real content.
+        # finalize_dataset.py falls back to full_text (English, for a video
+        # row) when the scraper's original_text column is blank -- that's
+        # correct for text-route rows but wrong here, so re-check against
+        # what the scraper actually recovered and blank it out if nothing.
+        if not merged_orig_text.get(url, "").strip():
+            d.at[i, "original_text"] = ""
         n_v += 1
         continue
     lang = orig_lang.get(url, "")
