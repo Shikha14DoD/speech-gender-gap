@@ -10,7 +10,10 @@ Tanzania is mixed, so correct per row:
       translated     -> yes
       original_title -> the raw Swahili video title (from notes); blank if
                         YouTube's own title was already English
-      original_text  -> blank (source is audio; no verbatim Swahili text)
+      original_text  -> the native Swahili auto-caption, when the scraper
+                        recovered one (see scraper_tanzania_video.py
+                        _swahili_caption); blank only for the videos where
+                        that caption genuinely isn't available
 
   English-original State House PDFs:
       language       -> English
@@ -69,7 +72,9 @@ for i in d.index:
         mm = vpat.search(d.at[i, "notes"])
         raw = mm.group(2).strip() if mm else ""
         d.at[i, "original_title"] = raw if (raw and NONLAT_OR_SW.search(raw)) else ""
-        d.at[i, "original_text"] = ""
+        # original_text: finalize_dataset.py already set this from the
+        # scraper's own Swahili-caption fetch when one was recovered --
+        # leave it as-is here rather than blanking real content.
         n_v += 1
         continue
     lang = orig_lang.get(url, "")
