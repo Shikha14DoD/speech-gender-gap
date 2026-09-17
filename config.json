@@ -403,6 +403,20 @@
       "start": "2023-01-01",
       "end": "2026-12-31"
     }
+  },
+  {
+    "country": "Brazil",
+    "leader": "Luiz Inacio Lula da Silva",
+    "role": "President",
+    "sex": "M",
+    "base_url": "https://www.gov.br/planalto/",
+    "language": "Portuguese",
+    "tenure_end": null,
+    "key": "brazil",
+    "date_range": {
+      "start": "2023-01-01",
+      "end": "2026-12-31"
+    }
   }
   ]
 }

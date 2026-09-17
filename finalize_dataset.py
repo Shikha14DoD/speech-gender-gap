@@ -53,6 +53,7 @@ LEADER_QID = {
     "Samia Suluhu Hassan": "Q16193885",
     "Kassim Majaliwa": "Q6737420",
     "Mwigulu Nchemba": "Q31752753",
+    "Luiz Inacio Lula da Silva": "Q37181",
 }
 
 
