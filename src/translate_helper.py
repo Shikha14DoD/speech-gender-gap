@@ -138,7 +138,7 @@ def translate_to_english(text: str, source_language: str) -> Optional[str]:
                 MYMEMORY_SOURCE_MAP = {
                 "es": "es-ES", "da": "da-DK", "sl": "sl-SI", "it": "it-IT", "sm": "sm-WS",
                 "zh-CN": "zh-CN", "zh": "zh-CN", "si": "si-LK", "ta": "ta-LK", "de": "de-DE",
-                "sw": "sw-KE",}
+                "sw": "sw-KE", "pt": "pt-BR",}
                 mymemory_source = MYMEMORY_SOURCE_MAP.get(source_language, source_language)
                 fallback = MyMemoryTranslator(source=mymemory_source, target="en-GB")
                 sub_pieces = _hard_split(chunk, 490)
