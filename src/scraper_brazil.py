@@ -190,6 +190,18 @@ _DATE_DATELINE = re.compile(
 
 
 def _date(soup: BeautifulSoup, body_text: str = "") -> Optional[str]:
+    # Plone's standard byline widget, outside the article body -- the most
+    # reliable source, present on the large majority of pages.
+    byline = soup.select_one(
+        "#plone-document-byline .documentPublished .value, "
+        ".documentByLine .documentPublished .value")
+    if byline:
+        m = re.match(r"(\d{1,2})/(\d{1,2})/(20\d{2})", byline.get_text(strip=True))
+        if m:
+            try:
+                return dt.date(int(m.group(3)), int(m.group(2)), int(m.group(1))).isoformat()
+            except ValueError:
+                pass
     t = soup.find("time", attrs={"datetime": True})
     if t and re.match(r"\d{4}-\d{2}-\d{2}", t["datetime"]):
         return t["datetime"][:10]
@@ -261,7 +273,7 @@ def parse_brazil(leader_config: dict, start_date: str, end_date: str,
         if len(body) < 400 or not title:
             stats["thin"] += 1
             continue
-        if _LISTING_TITLE.search(title) or _NOT_LULA.search(body[:2000]):
+        if _LISTING_TITLE.search(title) or _NOT_LULA.search(body):
             stats["thin"] += 1
             continue
         if not in_date_range(date, start_date, end_date):
