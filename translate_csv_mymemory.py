@@ -24,11 +24,15 @@ from deep_translator import MyMemoryTranslator
 import src.translate_helper as th
 
 
-def translate_mymemory(text: str, source: str) -> str:
+def translate_mymemory(text: str, source: str):
+    """-> (translated_text, n_failed_chunks, n_chunks). Failures are counted
+    from what actually came back, not from loop progress -- an earlier
+    version only printed iteration counts and hid a total failure wall."""
     if not text or not text.strip():
-        return ""
+        return "", 0, 0
     chunks = th._chunk_text(text, limit=450)
     out = []
+    n_failed = 0
     for i, chunk in enumerate(chunks):
         pieces = th._hard_split(chunk, 490)
         done = None
@@ -63,13 +67,24 @@ def main():
 
     todo = df.index[~(df["full_text_en"].str.len().gt(0) & df["title_en"].str.len().gt(0))].tolist()
     print(f"{len(todo)} rows left", flush=True)
+    total_failed_rows = 0
 
     for n, i in enumerate(todo, 1):
         print(f"[{n}/{len(todo)}] {df.at[i, 'title'][:60]}", flush=True)
         if not df.at[i, "title_en"].strip():
-            df.at[i, "title_en"] = translate_mymemory(str(df.at[i, "title"]), args.language) or df.at[i, "title"]
+            t_en, t_fail, _ = translate_mymemory(str(df.at[i, "title"]), args.language)
+            df.at[i, "title_en"] = t_en if (t_en and not t_fail) else df.at[i, "title"]
         if not df.at[i, "full_text_en"].strip():
-            df.at[i, "full_text_en"] = translate_mymemory(str(df.at[i, "full_text"]), args.language)
+            ft_en, n_fail, n_chunks = translate_mymemory(str(df.at[i, "full_text"]), args.language)
+            if n_fail:
+                # do NOT save a partly-failed row as "done" -- leave it
+                # blank so a re-run retries it instead of shipping markers
+                print(f"  !! row {n} had {n_fail}/{n_chunks} failed chunks -- left blank for retry", flush=True)
+                total_failed_rows += 1
+                df.at[i, "title_en"] = ""
+            else:
+                df.at[i, "full_text_en"] = ft_en
+                print(f"  ok: {n_chunks} chunks, 0 failed", flush=True)
         df.to_csv(args.input, index=False, encoding="utf-8")
 
     still_bad = df["full_text_en"].str.contains(r"\[TRANSLATION FAILED", na=False, regex=True).sum()
