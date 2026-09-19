@@ -45,11 +45,19 @@ def translate_mymemory(text: str, source: str):
             except Exception as e:
                 last = e
                 time.sleep(6 * (attempt + 1))
-        out.append(done if done is not None else f"[TRANSLATION FAILED FOR THIS SECTION: {last}]")
+        if done is None:
+            n_failed += 1
+            out.append(f"[TRANSLATION FAILED FOR THIS SECTION: {last}]")
+        else:
+            out.append(done)
         if i % 10 == 0:
-            print(f"    chunk {i + 1}/{len(chunks)}", flush=True)
+            print(f"    chunk {i + 1}/{len(chunks)}  (failed so far: {n_failed})", flush=True)
+        # fail fast: if the opening chunks ALL failed the service is down --
+        # stop now instead of burning hours on retries
+        if i >= 4 and n_failed == i + 1:
+            raise RuntimeError(f"first {i + 1} chunks ALL failed ({last}) -- service down, aborting")
         time.sleep(1.5)
-    return "\n\n".join(out)
+    return "\n\n".join(out), n_failed, len(chunks)
 
 
 def main():
@@ -87,8 +95,9 @@ def main():
                 print(f"  ok: {n_chunks} chunks, 0 failed", flush=True)
         df.to_csv(args.input, index=False, encoding="utf-8")
 
-    still_bad = df["full_text_en"].str.contains(r"\[TRANSLATION FAILED", na=False, regex=True).sum()
-    print(f"\nDONE. rows with failed sections: {still_bad}", flush=True)
+    n_ok = int((df["full_text_en"].str.len() > 0).sum())
+    print(f"\nDONE. rows fully translated: {n_ok}/{len(df)}; "
+          f"rows left blank after failures (re-run to retry): {total_failed_rows}", flush=True)
 
 
 if __name__ == "__main__":
