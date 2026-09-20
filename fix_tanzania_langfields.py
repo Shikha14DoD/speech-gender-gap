@@ -5,7 +5,13 @@ Post-finalize field fixup for tanzania_FINAL.csv.
 its translated branch, fills original_title/original_text for every row.
 Tanzania is mixed, so correct per row:
 
-  video rows (YouTube Swahili ASR -> English MT):
+  English-audio video rows (spoken language found by
+  audit_tanzania_video_language.py -- ~40% of the videos):
+      language       -> English
+      translated     -> no    (caption is native English ASR, no translation)
+      original_text  -> blank (there is no Swahili source to check against)
+
+  Swahili-audio video rows (YouTube Swahili ASR -> English MT):
       language       -> Swahili
       translated     -> yes
       original_title -> the raw Swahili video title (from notes); blank if
@@ -69,15 +75,24 @@ is_vid = d["source_url"].str.contains("youtube", case=False)
 vpat = re.compile(r"Original video title \(Swahili\):\s*(['\"])(.+?)\1\.\s", re.S)
 NONLAT_OR_SW = re.compile(r"[^\x00-\x7f]|\b(hotuba|rais|wakati|akizindua|akifungua)\b", re.I)
 
-n_v = n_en = n_sw = 0
+n_v = n_en = n_sw = n_v_en = 0
 for i in d.index:
     url = d.at[i, "source_url"]
     if is_vid[i]:
-        d.at[i, "language"] = "Swahili"
-        d.at[i, "translated"] = "yes"
         mm = vpat.search(d.at[i, "notes"])
         raw = mm.group(2).strip() if mm else ""
         d.at[i, "original_title"] = raw if (raw and NONLAT_OR_SW.search(raw)) else ""
+        if orig_lang.get(url, "") == "English":
+            # English-audio video (see audit_tanzania_video_language.py): the
+            # caption is YouTube's native English ASR, not a translation, and
+            # there is no Swahili source -- so nothing is missing.
+            d.at[i, "language"] = "English"
+            d.at[i, "translated"] = "no"
+            d.at[i, "original_text"] = ""
+            n_v_en += 1
+            continue
+        d.at[i, "language"] = "Swahili"
+        d.at[i, "translated"] = "yes"
         # finalize_dataset.py falls back to full_text (English, for a video
         # row) when the scraper's original_text column is blank -- that's
         # correct for text-route rows but wrong here, so re-check against
@@ -107,5 +122,6 @@ for i in d.index:
         n_sw += 1
 
 d.to_csv(CSV, index=False, encoding="utf-8")
-print(f"video rows: {n_v}   English PDF rows: {n_en}   Swahili PDF rows: {n_sw}")
+print(f"video rows (Swahili audio): {n_v}   video rows (English audio): {n_v_en}   "
+      f"English PDF rows: {n_en}   Swahili PDF rows: {n_sw}")
 print(d.groupby(["language", "translated"]).size().to_string())

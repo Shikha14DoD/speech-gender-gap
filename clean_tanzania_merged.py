@@ -10,6 +10,7 @@ Passes:
        - corrupted / empty captions
      Driven by NOT_SPEECH_TITLES (substring, quote-insensitive) + regexes;
      populated from verification, not guessed.
+  1b. drop videos whose speech recognition ran in the wrong language
   2. drop near-duplicate pairs (same leader, dates within 2 days, title-token
      Jaccard >= 0.5 or shared 80-char prefix) -- keep the text row over the
      video row, else the longer transcript.
@@ -60,6 +61,22 @@ def _nq(s):
              .str.replace("“", '"').str.replace("”", '"'))
 
 
+def _words(t):
+    return {w for w in re.findall(r"[a-zà-ÿ]{5,}", str(t).lower())}
+
+
+def content_overlap(a, b):
+    """Jaccard overlap of distinct 5+-letter words. On this corpus true
+    duplicates (same speech from the PDF set and the video set) score
+    0.60-0.82 while different speeches score <= 0.18, so 0.40 is a safe cut."""
+    A, B = _words(a), _words(b)
+    return len(A & B) / len(A | B) if A and B else 0.0
+
+
+DUP_OVERLAP = 0.40
+DUP_WINDOW_DAYS = 6      # video upload can lag the event by several days
+
+
 def main():
     d = pd.read_csv(CSV, dtype=str, keep_default_na=False)
     n0 = len(d)
@@ -80,6 +97,13 @@ def main():
     for i in d.index[drop]:
         print(f"DROP not-speech   {d.at[i,'date']}  {d.at[i,'title'][:65]}")
     d = d[~drop].reset_index(drop=True)
+
+    # ---- pass 1b: videos whose speech recognition ran in the WRONG language
+    # (see audit_tanzania_video_language.py) -- gibberish captions, not usable
+    bad_asr = d["language"].str.startswith("UNRELIABLE_ASR")
+    for i in d.index[bad_asr]:
+        print(f"DROP wrong-language ASR {d.at[i,'date']}  {d.at[i,'language']}  {d.at[i,'title'][:55]}")
+    d = d[~bad_asr].reset_index(drop=True)
 
     # ---- pass 2: near-duplicates -----------------------------------------
     d["_fl"] = d["full_text"].str.len().astype(int)
@@ -114,6 +138,37 @@ def main():
                   f"[{'TXT' if d.at[toss,'_txt'] else 'VID'}] {d.at[toss,'title'][:55]}")
     d = d.drop(index=list(gone)).drop(columns=["_fl", "_txt"]).reset_index(drop=True)
 
+    # ---- pass 2b: the SAME speech present in both routes ----------------
+    # Title matching can't see these (Swahili-titled PDF vs English-titled
+    # video, upload dates a few days apart), so compare the text itself, like
+    # with like: English vs English, Swahili vs Swahili. The official PDF is
+    # verbatim and wins; the video-ASR row is dropped.
+    is_vid = d["source_url"].str.contains("youtube", case=False)
+    pdf_en = d["notes"].str.contains("English original", na=False)
+    drop_vid = set()
+    for vi in d.index[is_vid]:
+        v = d.loc[vi]
+        for pi in d.index[~is_vid]:
+            p_ = d.loc[pi]
+            if v["leader"] != p_["leader"]:
+                continue
+            da, db = dd(v["date"]), dd(p_["date"])
+            if not da or not db or abs((da - db).days) > DUP_WINDOW_DAYS:
+                continue
+            if pdf_en[pi]:                       # English PDF vs English caption
+                a_txt, b_txt = v["full_text"], p_["full_text"]
+            elif v["language"] == "Swahili" and v.get("original_text", ""):
+                a_txt, b_txt = v["original_text"], p_["full_text"]   # Swahili vs Swahili
+            else:
+                continue
+            ov = content_overlap(a_txt, b_txt)
+            if ov >= DUP_OVERLAP:
+                drop_vid.add(vi)
+                print(f"DROP cross-route dup {v['date']} [VID] {v['title'][:40]}  "
+                      f"== {p_['date']} [PDF] {p_['title'][:34]}  overlap={ov:.2f}")
+                break
+    d = d.drop(index=list(drop_vid)).reset_index(drop=True)
+
     # ---- pass 3: prep translation columns --------------------------------
     if "full_text_en" not in d.columns:
         d["full_text_en"] = ""
@@ -122,8 +177,12 @@ def main():
     is_vid = d["source_url"].str.contains("youtube", case=False)
     is_en_pdf = ~is_vid & d["notes"].str.contains("English original", na=False)
     ready = is_vid | is_en_pdf          # no sw->en translation needed
-    d.loc[ready & d["full_text_en"].eq(""), "full_text_en"] = d.loc[ready, "full_text"]
-    d.loc[ready & d["title_en"].eq(""), "title_en"] = d.loc[ready, "title"]
+    # same mask on both sides, so re-running on a file that already has some
+    # of these columns filled is safe (it used to crash: mask/value mismatch)
+    m_text = ready & d["full_text_en"].eq("")
+    d.loc[m_text, "full_text_en"] = d.loc[m_text, "full_text"]
+    m_title = ready & d["title_en"].eq("")
+    d.loc[m_title, "title_en"] = d.loc[m_title, "title"]
 
     d.to_csv(CSV, index=False, encoding="utf-8")
     print(f"\n{n0} -> {len(d)} rows  ({n0 - len(d)} dropped)")
