@@ -10,8 +10,10 @@ choice -- this route keeps only videos whose TITLE marks a full address
 on the cheap flat channel listing first; only the survivors get a full
 metadata extract + caption download.
 
-The speeches are in Swahili with no manual captions; YouTube
-auto-generates Swahili speech-recognition captions and offers them
+Most speeches are in Swahili, but a large share (~40%) of the international
+addresses are in ENGLISH, so the spoken language is read per video from
+YouTube's recogniser (`_spoken_language`) rather than assumed. Swahili audio
+has no manual captions; YouTube auto-generates Swahili speech-recognition captions and offers them
 machine-translated to English.  This scraper pulls that English
 auto-caption via yt-dlp -- rough (no punctuation, ASR + MT errors),
 usable for thematic / word-frequency analysis only, NOT verbatim.  Every
@@ -173,6 +175,17 @@ def _english_caption(video_id: str) -> str:
                     ["*.en.vtt", "*.en*.vtt", "*.vtt"])
 
 
+def _spoken_language(info: dict) -> str:
+    """Language the speech recogniser actually heard: yt-dlp marks it with a
+    '<code>-orig' automatic-caption key. Many State House videos are
+    English-language addresses, and for some YouTube recognised the wrong
+    language entirely, so the channel's language can't be assumed Swahili."""
+    for k in (info.get("automatic_captions") or {}):
+        if k.endswith("-orig"):
+            return k[:-5].split("-")[0]
+    return (info.get("language") or "?").split("-")[0]
+
+
 def _swahili_caption(video_id: str) -> str:
     """YouTube's native Swahili speech-recognition auto-caption (the
     pre-translation source text) -- kept as `original_text` so translation
@@ -277,7 +290,19 @@ def parse_tanzania_video(leader_config: dict, start_date: str, end_date: str,
         # The native Swahili auto-caption (the ASR text YouTube translated
         # FROM) -- kept as original_text so specific terms can be checked
         # against the source, not just trusted to have survived translation.
-        sw_text = _swahili_caption(vid) if len(cap) >= 200 else ""
+        spoken = _spoken_language(v)
+        if spoken == "en":
+            # English audio: the caption is native English ASR (not a
+            # translation) and YouTube's `sw` track would just be English
+            # machine-translated INTO Swahili -- not a real original
+            row_language, sw_text = "English", ""
+        elif spoken == "sw":
+            row_language = "Swahili"
+            sw_text = _swahili_caption(vid) if len(cap) >= 200 else ""
+        else:
+            # recogniser ran in the wrong language -> gibberish caption;
+            # marked so clean_tanzania_merged.py drops it
+            row_language, sw_text = f"UNRELIABLE_ASR_{spoken}", ""
 
         speeches.append(Speech(
             country="Tanzania",
@@ -286,11 +311,18 @@ def parse_tanzania_video(leader_config: dict, start_date: str, end_date: str,
             date=date,
             title=title_en,
             full_text=cap,
-            language="Swahili",
+            language=row_language,
             source_url=f"https://www.youtube.com/watch?v={vid}",
             likely_speech=classify_as_speech(title_en),
             content_type=classify_content_type(title_en),
-            notes=(f"VIDEO. Transcript is YouTube's automatic Swahili "
+            notes=((f"VIDEO. Spoken in English; transcript is YouTube's automatic "
+                    f"English speech-recognition (not a translation) -- no "
+                    f"punctuation, recognition errors, suitable for "
+                    f"thematic/word-frequency analysis only, NOT verbatim. "
+                    f"Original video title (Swahili): {title!r}. "
+                    f"Duration {dur // 60}m. Source: Ikulu YouTube channel.")
+                   if row_language == "English" else
+                   f"VIDEO. Transcript is YouTube's automatic Swahili "
                    f"speech-recognition, auto-translated to English by YouTube "
                    f"-- no punctuation, machine-translation errors, suitable for "
                    f"thematic/word-frequency analysis only, NOT verbatim. "
