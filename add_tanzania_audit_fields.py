@@ -11,6 +11,9 @@ from the master dataset's data dictionary (all_leaders_master.csv, Sep 2026):
   audience_scope  -- who the speech was addressed to. Allowed values:
                      domestic_public, international, sectoral_stakeholder,
                      government_party_internal, unclassified.
+  audience_reach  -- collapsed audience_scope (national_public / international /
+                     closed_door / unclassified). MAPPED from audience_scope via
+                     audit_vocab.py, never assigned by hand.
   delivered_venue -- city/place, parsed from the title.
 
 Rule-based, same spirit as the master merge's own classification
@@ -25,6 +28,8 @@ Usage: python add_tanzania_audit_fields.py
 """
 import re
 import pandas as pd
+
+from audit_vocab import add_audit_reach, validate
 
 CSV = "data/processed/tanzania_FINAL.csv"
 
@@ -179,6 +184,8 @@ def main():
     d["doc_type_audit"] = [doc_type(t, n) for t, n in zip(d["title"], d["notes"])]
     d["audience_scope"] = d["title"].map(audience_scope)
     d["delivered_venue"] = d["title"].map(delivered_venue)
+    d = add_audit_reach(d)
+    validate(d)
 
     d.to_csv(CSV, index=False, encoding="utf-8")
 
