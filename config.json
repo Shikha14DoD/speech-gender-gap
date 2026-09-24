@@ -459,6 +459,20 @@
       "start": "2024-01-01",
       "end": "2026-12-31"
     }
+  },
+  {
+    "country": "Nepal",
+    "leader": "K. P. Sharma Oli / Sushila Karki / Balendra Shah",
+    "role": "Prime Minister",
+    "sex": "M/F/M",
+    "base_url": "https://mofa.gov.np/",
+    "language": "English",
+    "tenure_end": null,
+    "key": "nepal",
+    "date_range": {
+      "start": "2024-01-01",
+      "end": "2026-12-31"
+    }
   }
   ]
 }

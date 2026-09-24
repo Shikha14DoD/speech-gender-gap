@@ -42,6 +42,7 @@ from src.scraper_brazil import parse_brazil
 from src.scraper_bahamas import parse_bahamas
 from src.scraper_eu import parse_eu
 from src.scraper_sweden import parse_sweden
+from src.scraper_nepal import parse_nepal
 from src.utils import write_csv
 
 
@@ -79,6 +80,7 @@ PARSERS = {
     "bahamas": parse_bahamas,
     "eu": parse_eu,
     "sweden": parse_sweden,
+    "nepal": parse_nepal,
 }
 
 
