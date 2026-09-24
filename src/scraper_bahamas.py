@@ -47,6 +47,13 @@ def _get(params: dict, max_retries: int = 3, delay_seconds: float = 1.5):
 
 def _is_pm_item(title: str) -> bool:
     t = title.lower()
+    # speeches by the Deputy / Acting PM (Chester Cooper) sit in the same
+    # categories -- they are not Davis's own words
+    if ("acting prime minister" in t or "deputy prime minister" in t) and "davis" not in t:
+        return False
+    # "Prime Minister Davis to Attend ..." are one-paragraph travel advisories
+    if re.search(r"\bto attend\b", t):
+        return False
     return "davis" in t or "prime minister" in t
 
 
