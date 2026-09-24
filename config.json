@@ -417,6 +417,20 @@
       "start": "2023-01-01",
       "end": "2026-12-31"
     }
+  },
+  {
+    "country": "Bahamas",
+    "leader": "Philip Davis",
+    "role": "Prime Minister",
+    "sex": "M",
+    "base_url": "https://opm.gov.bs/",
+    "language": "English",
+    "tenure_end": null,
+    "key": "bahamas",
+    "date_range": {
+      "start": "2024-01-01",
+      "end": "2026-12-31"
+    }
   }
   ]
 }
