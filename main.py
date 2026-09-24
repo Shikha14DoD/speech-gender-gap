@@ -40,6 +40,8 @@ from src.scraper_tanzania import parse_tanzania
 from src.scraper_tanzania_video import parse_tanzania_video
 from src.scraper_brazil import parse_brazil
 from src.scraper_bahamas import parse_bahamas
+from src.scraper_eu import parse_eu
+from src.scraper_sweden import parse_sweden
 from src.utils import write_csv
 
 
@@ -75,6 +77,8 @@ PARSERS = {
     "tanzania_video": parse_tanzania_video,
     "brazil": parse_brazil,
     "bahamas": parse_bahamas,
+    "eu": parse_eu,
+    "sweden": parse_sweden,
 }
 
 

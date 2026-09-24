@@ -431,6 +431,34 @@
       "start": "2024-01-01",
       "end": "2026-12-31"
     }
+  },
+  {
+    "country": "European Union (supranational)",
+    "leader": "Ursula von der Leyen",
+    "role": "President of the European Commission",
+    "sex": "F",
+    "base_url": "https://ec.europa.eu/commission/presscorner/",
+    "language": "English",
+    "tenure_end": null,
+    "key": "eu",
+    "date_range": {
+      "start": "2024-01-01",
+      "end": "2026-12-31"
+    }
+  },
+  {
+    "country": "Sweden",
+    "leader": "Ulf Kristersson",
+    "role": "Prime Minister",
+    "sex": "M",
+    "base_url": "https://www.regeringen.se/tal/",
+    "language": "Swedish",
+    "tenure_end": null,
+    "key": "sweden",
+    "date_range": {
+      "start": "2024-01-01",
+      "end": "2026-12-31"
+    }
   }
   ]
 }

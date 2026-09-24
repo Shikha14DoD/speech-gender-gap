@@ -54,6 +54,17 @@ LEADER_QID = {
     "Kassim Majaliwa": "Q6737420",
     "Mwigulu Nchemba": "Q31752753",
     "Luiz Inacio Lula da Silva": "Q37181",
+    "Ulf Kristersson": "Q1780398",
+    "David Kabua": "Q20658229",
+    "Wesley Simina": "Q7984081",
+    "Andris Kulbergs": "Q115604300",
+    "Philip Davis": "Q7183082",
+    "Sushila Karki": "Q23842116",
+    "K. P. Sharma Oli": "Q3195923",
+    "Balendra Shah": "Q111772343",
+    "Srettha Thavisin": "Q118213697",
+    "Anutin Charnvirakul": "Q16139757",
+    "Ursula von der Leyen": "Q60772",
 }
 
 
