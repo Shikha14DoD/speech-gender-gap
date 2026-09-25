@@ -83,7 +83,12 @@ def venue_from_notes(notes):
 
 def main():
     d = pd.read_csv(CSV, dtype=str, keep_default_na=False)
-    eng = d["full_text"].map(is_english)
+    # after finalize_dataset.py, `full_text` is ALWAYS the English column
+    # (translated or native) -- checking it can never tell the two apart.
+    # `original_text` is finalize's copy of the raw pre-translation source,
+    # which for the 6 native-English speeches is itself English -- that's
+    # the real signal.
+    eng = d["original_text"].map(is_english)
     d.loc[eng, ["language", "translated", "original_text"]] = ["English", "no", ""]
     d["doc_type_audit"] = "delivered_speech"
     sc = [scope(t) for t in d["original_title"]]
