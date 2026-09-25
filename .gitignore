@@ -19,3 +19,5 @@ Thumbs.db
 # Claude Code local config/instructions - machine-local, not shared project code
 .claude/
 CLAUDE.md
+# local secrets, never commit
+.env
