@@ -487,6 +487,20 @@
       "start": "2024-01-01",
       "end": "2026-12-31"
     }
+  },
+  {
+    "country": "Federated States of Micronesia",
+    "leader": "Wesley Simina",
+    "role": "President",
+    "sex": "M",
+    "base_url": "https://gadebate.un.org/",
+    "language": "English",
+    "tenure_end": null,
+    "key": "micronesia",
+    "date_range": {
+      "start": "2024-01-01",
+      "end": "2026-12-31"
+    }
   }
   ]
 }
