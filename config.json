@@ -473,6 +473,20 @@
       "start": "2024-01-01",
       "end": "2026-12-31"
     }
+  },
+  {
+    "country": "Thailand",
+    "leader": "Srettha Thavisin / Anutin Charnvirakul",
+    "role": "Prime Minister",
+    "sex": "M/M",
+    "base_url": "https://www.mfa.go.th/en/content-category/5d5bcb4e15e39c3060006848",
+    "language": "English",
+    "tenure_end": null,
+    "key": "thailand",
+    "date_range": {
+      "start": "2024-01-01",
+      "end": "2026-12-31"
+    }
   }
   ]
 }
