@@ -501,6 +501,34 @@
       "start": "2024-01-01",
       "end": "2026-12-31"
     }
+  },
+  {
+    "country": "Thailand",
+    "leader": "Srettha Thavisin / Anutin Charnvirakul",
+    "role": "Prime Minister",
+    "sex": "M/M",
+    "base_url": "https://www.youtube.com/",
+    "language": "Thai/English",
+    "tenure_end": null,
+    "key": "thailand_video",
+    "date_range": {
+      "start": "2024-01-01",
+      "end": "2026-12-31"
+    }
+  },
+  {
+    "country": "Marshall Islands",
+    "leader": "David Kabua",
+    "role": "President",
+    "sex": "M",
+    "base_url": "https://rmigov.com/",
+    "language": "English",
+    "tenure_end": "2024-01-03",
+    "key": "marshallislands",
+    "date_range": {
+      "start": "2023-01-01",
+      "end": "2024-01-03"
+    }
   }
   ]
 }
