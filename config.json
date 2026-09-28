@@ -529,6 +529,20 @@
       "start": "2023-01-01",
       "end": "2024-01-03"
     }
+  },
+  {
+    "country": "Latvia",
+    "leader": "Andris Kulbergs",
+    "role": "Prime Minister",
+    "sex": "M",
+    "base_url": "https://www.mk.gov.lv/en/articles",
+    "language": "English",
+    "tenure_end": null,
+    "key": "latvia",
+    "date_range": {
+      "start": "2026-05-28",
+      "end": "2026-12-31"
+    }
   }
   ]
 }

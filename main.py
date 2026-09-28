@@ -47,6 +47,7 @@ from src.scraper_thailand import parse_thailand
 from src.scraper_micronesia import parse_micronesia
 from src.scraper_thailand_video import parse_thailand_video
 from src.scraper_marshallislands import parse_marshallislands
+from src.scraper_latvia import parse_latvia
 from src.utils import write_csv
 
 
@@ -89,6 +90,7 @@ PARSERS = {
     "micronesia": parse_micronesia,
     "thailand_video": parse_thailand_video,
     "marshallislands": parse_marshallislands,
+    "latvia": parse_latvia,
 }
 
 
