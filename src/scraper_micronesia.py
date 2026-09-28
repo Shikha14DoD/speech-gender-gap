@@ -11,7 +11,10 @@ sources fill the gap:
      UN, is published there as a PDF, one per session. This is a UN
      publication of the government's own verbatim text, not a third party's
      account of it.
-  2. forumsec.org (Pacific Islands Forum Secretariat) -- publishes verbatim
+  2. unmission.fm -- the FSM Permanent Mission to the UN's own site (WordPress,
+     open REST API). Most of its "UN statement" posts are by the ambassador;
+     only posts whose title names the President are kept.
+  3. forumsec.org (Pacific Islands Forum Secretariat) -- publishes verbatim
      remarks by Pacific leaders at Forum-organised events. Its `/publications`
      listing has no working search or filter, so pages are found by web
      search rather than crawled; a short, hand-verified list of his own
@@ -19,6 +22,7 @@ sources fill the gap:
      below and re-checked by title/date before being trusted.
 """
 
+import datetime as dt
 import re
 import time
 from typing import List, Optional
@@ -105,6 +109,80 @@ def _unga_speeches(start_date: str, end_date: str) -> List[Speech]:
     return out
 
 
+_MISSION_API = "https://unmission.fm/wp-json/wp/v2/posts"
+_PRESIDENT_TITLE = re.compile(r"president (wesley|simina)|simina", re.I)
+
+
+def _mission_speeches(start_date: str, end_date: str) -> List[Speech]:
+    out, page = [], 1
+    while True:
+        try:
+            resp = requests.get(_MISSION_API, headers=HEADERS, timeout=40, params={
+                "search": "President Simina", "per_page": 50, "page": page,
+                "after": f"{start_date}T00:00:00", "_fields": "id,date,title,link,content"})
+            time.sleep(1.0)
+        except Exception as e:
+            print(f"  [warn] unmission.fm request failed: {e!r}")
+            break
+        if resp.status_code != 200 or not resp.json():
+            break
+        for post in resp.json():
+            title = clean_text(BeautifulSoup(post["title"]["rendered"], "html.parser").get_text(" "))
+            if not _PRESIDENT_TITLE.search(title):
+                continue
+            body = BeautifulSoup(post["content"]["rendered"], "html.parser")
+            paragraphs = [clean_text(p.get_text(" ")) for p in body.find_all(["p", "li"])
+                          if p.get_text(strip=True)]
+            text = clean_text("\n\n".join(paragraphs))
+            text = re.sub(r"^\s*Video:\s*\S+\s*", "", text)           # drop the embedded-video line
+            if len(text) < 400:
+                # short statements exist (e.g. a 211-word intervention) -- keep if real text
+                if len(text) < 250:
+                    continue
+            m = (re.search(r"New York,\s*(\d{1,2})\s+(\w+)\s+(20\d\d)", text)
+                 or re.match(r"\s*(\d{1,2})\s+(\w+)\s+(20\d\d)", text))
+            try:
+                date_iso = dt.datetime.strptime(" ".join(m.groups()[-3:]), "%d %B %Y").date().isoformat()
+            except Exception:
+                date_iso = post["date"][:10]
+            if not in_date_range(date_iso, start_date, end_date):
+                continue
+            out.append(Speech(
+                country="Federated States of Micronesia", leader="Wesley Simina", role="President",
+                date=date_iso, title=title, full_text=text, language="English",
+                source_url=post["link"], likely_speech=classify_as_speech(title),
+                content_type=classify_content_type(title),
+                notes=("Sourced from unmission.fm, the FSM Permanent Mission to the UN's own site "
+                       "(President's statements only; the ambassador's are not included)."),
+            ))
+        page += 1
+    return out
+
+
+def _dedupe(speeches: List[Speech]) -> List[Speech]:
+    """Same speech can appear on several sources. Keep the highest-priority copy
+    (UN's own PDF > the FSM UN Mission site > forumsec.org) when two rows within a
+    few days share >=60% of their distinct 5+-letter words."""
+    def rank(s):
+        return 0 if "gadebate.un.org" in s.source_url else 1 if "unmission.fm" in s.source_url else 2
+    def words(t):
+        return set(re.findall(r"[a-z]{5,}", t.lower()))
+    kept: List[Speech] = []
+    for s in sorted(speeches, key=rank):
+        ws = words(s.full_text)
+        dup = False
+        for k in kept:
+            d = abs((dt.date.fromisoformat(s.date) - dt.date.fromisoformat(k.date)).days)
+            wk = words(k.full_text)
+            if d <= 4 and ws and wk and len(ws & wk) / len(ws | wk) >= 0.60:
+                print(f"  [dedupe] dropping {s.source_url.split('/')[2]} copy of: {k.title[:60]}")
+                dup = True
+                break
+        if not dup:
+            kept.append(s)
+    return sorted(kept, key=lambda s: s.date)
+
+
 def _forumsec_speeches(start_date: str, end_date: str) -> List[Speech]:
     out = []
     for url in _FORUMSEC_CANDIDATES:
@@ -157,7 +235,9 @@ def _forumsec_speeches(start_date: str, end_date: str) -> List[Speech]:
 def parse_micronesia(leader_config: dict, start_date: str, end_date: str,
                      limit: Optional[int] = None) -> List[Speech]:
     print("== Federated States of Micronesia (Simina) -- UN General Debate + forumsec.org ==")
-    speeches = _unga_speeches(start_date, end_date) + _forumsec_speeches(start_date, end_date)
+    speeches = _dedupe(_unga_speeches(start_date, end_date)
+                       + _mission_speeches(start_date, end_date)
+                       + _forumsec_speeches(start_date, end_date))
     print(f"  {len(speeches)} speeches")
     if limit:
         speeches = speeches[:limit]

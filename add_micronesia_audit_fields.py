@@ -15,7 +15,8 @@ from audit_vocab import add_audit_reach, validate
 CSV = "data/processed/micronesia_FINAL.csv"
 
 _VENUES = [
-    (r"united nations|general debate|summit of the future", "New York, USA"),
+    (r"united nations|general debate|summit of the future|aosis|existential threat|sea-level rise",
+     "New York, USA"),
     (r"small island states leaders meeting", "Koror, Palau"),
 ]
 
