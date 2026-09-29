@@ -32,7 +32,13 @@ def _load_key() -> str:
     sys.exit("No DEEPL_API_KEY found in .env or the environment.")
 
 
-def translate(key: str, text: str, source: str, max_retries: int = 3) -> str:
+MAX_CHUNK_CHARS = 1500   # DeepL Free returned "413 Payload too large" on
+                        # Thai-script texts well under its documented 128 KiB
+                        # limit (Thai has no spaces, so a "long text" is also
+                        # very information-dense) -- split defensively small
+
+
+def _translate_one(key: str, text: str, source: str, max_retries: int = 3) -> str:
     for attempt in range(1, max_retries + 1):
         try:
             resp = requests.post(API, headers={"Authorization": f"DeepL-Auth-Key {key}"},
@@ -48,8 +54,39 @@ def translate(key: str, text: str, source: str, max_retries: int = 3) -> str:
             print(f"    [warn] rate limited, waiting 30s (attempt {attempt})")
             time.sleep(30)
             continue
+        if resp.status_code == 413 and len(text) > 200:
+            # `x or y or z` treats a real split point of 0 as falsy and skips
+            # it -- Thai script often has no spaces at all, so rfind()
+            # legitimately returns 0 or -1 here; fall through explicitly
+            # instead, or this can loop splitting off an empty first half
+            mid = len(text) // 2
+            split = text.rfind("\n", 0, mid)
+            if split <= 0:
+                split = text.rfind(" ", 0, mid)
+            if split <= 0:
+                split = mid
+            print(f"    [warn] 413 on {len(text)} chars, splitting at {split}")
+            return (_translate_one(key, text[:split], source, max_retries) + " "
+                    + _translate_one(key, text[split:], source, max_retries))
         raise RuntimeError(f"DeepL {resp.status_code}: {resp.text[:200]}")
     raise RuntimeError(f"gave up after {max_retries} attempts")
+
+
+def translate(key: str, text: str, source: str, max_retries: int = 3) -> str:
+    """Split into paragraph-sized chunks before sending -- DeepL Free 413'd
+    on some long Thai-script texts well under its documented size limit."""
+    if len(text) <= MAX_CHUNK_CHARS:
+        return _translate_one(key, text, source, max_retries)
+    paras = text.split("\n")
+    chunks, cur = [], ""
+    for p in paras:
+        if len(cur) + len(p) + 1 > MAX_CHUNK_CHARS and cur:
+            chunks.append(cur)
+            cur = ""
+        cur = (cur + "\n" + p) if cur else p
+    if cur:
+        chunks.append(cur)
+    return "\n".join(_translate_one(key, c, source, max_retries) for c in chunks if c.strip())
 
 
 def main():
