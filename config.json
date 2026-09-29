@@ -543,6 +543,20 @@
       "start": "2026-05-28",
       "end": "2026-12-31"
     }
+  },
+  {
+    "country": "Latvia",
+    "leader": "Andris Kulbergs",
+    "role": "Prime Minister",
+    "sex": "M",
+    "base_url": "https://www.youtube.com/",
+    "language": "English/Latvian",
+    "tenure_end": null,
+    "key": "latvia_video",
+    "date_range": {
+      "start": "2026-05-28",
+      "end": "2026-12-31"
+    }
   }
   ]
 }
